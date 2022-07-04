@@ -3,34 +3,32 @@
 
 import logging
 from time import sleep
-from serial import Serial
-from pymodbus.client.sync import ModbusSerialClient
 
-from owen.client import OwenSerialClient, OwenModbusClient
+from owen.transport import OwenSerialTransport, OwenModbusTransport
+from owen.client import Client
 from owen.device import TRM201
 
 logging.basicConfig(level=logging.INFO)
 
 
 if __name__ == "__main__":
-    transport = Serial(port="COM5",
-                       baudrate=115200,
-                       stopbits=1,
-                       parity='N',
-                       bytesize=8,
-                       timeout=0.1)
-    trm = OwenSerialClient(transport=transport, device=TRM201, unit=1)
+    transport = OwenSerialTransport(port="COM5",
+                                    baudrate=115200,
+                                    stopbits=1,
+                                    parity='N',
+                                    bytesize=8,
+                                    timeout=0.1)
 
-    #transport = ModbusSerialClient(method="rtu",
-    #                               port="COM5",
-    #                               baudrate=115200,
-    #                               stopbits=2,
-    #                               parity='N',
-    #                               bytesize=8,        # "rtu": bytesize=8, "ascii": bytesize=7
-    #                               timeout=0.1,
-    #                               retry_on_empty=True)
-    #trm = OwenModbusClient(transport=transport, device=TRM201, unit=1)
+    #transport = OwenModbusTransport(method="rtu",
+    #                                port="COM5",
+    #                                baudrate=115200,
+    #                                stopbits=2,
+    #                                parity='N',
+    #                                bytesize=8,        # "rtu": bytesize=8, "ascii": bytesize=7
+    #                                timeout=0.1,
+    #                                retry_on_empty=True)
 
+    trm = Client(transport=transport, device=TRM201, unit=1)
     print (trm)
 
     ''' !!!
