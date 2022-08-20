@@ -20,14 +20,14 @@ _OWEN_NAME = {'0': 0,  'A': 20, 'K': 40, 'U': 60,
               '8': 16, 'I': 36, 'S': 56, '/': 76,
               '9': 18, 'J': 38, 'T': 58, ' ': 78}
 
-_OWEN_TYPE = {'F32': {'size': 4, 'pack': lambda value: pack('>f', value)[0:4],  'unpack': lambda value: unpack('>f', value[0:4])[0]},
-              'F24': {'size': 3, 'pack': lambda value: pack('>f', value)[0:3],  'unpack': lambda value: unpack('>f', value[0:3] + b'\x00')[0]},
-              'U16': {'size': 2, 'pack': lambda value: pack('>H', value)[0:2],  'unpack': lambda value: unpack('>H', value[0:2])[0]},
-              'I16': {'size': 2, 'pack': lambda value: pack('>h', value)[0:2],  'unpack': lambda value: unpack('>h', value[0:2])[0]},
-              'U8':  {'size': 1, 'pack': lambda value: pack('>B', value)[0:1],  'unpack': lambda value: unpack('>B', value[0:1])[0]},
-              'I8':  {'size': 1, 'pack': lambda value: pack('>b', value)[0:1],  'unpack': lambda value: unpack('>b', value[0:1])[0]},
-              'U24': {'size': 3, 'pack': lambda value: pack('>BH', value)[0:3], 'unpack': lambda value: unpack('>BH', value[0:3])},     # для N.err
-              'STR': {'size': 8, 'pack': lambda value: value[::-1],             'unpack': lambda value: value[::-1]}}
+_OWEN_TYPE = {'F32': {'pack': lambda value: pack('>f', value)[0:4],  'unpack': lambda value: unpack('>f', value[0:4])[0]},
+              'F24': {'pack': lambda value: pack('>f', value)[0:3],  'unpack': lambda value: unpack('>f', value[0:3] + b'\x00')[0]},
+              'U16': {'pack': lambda value: pack('>H', value)[0:2],  'unpack': lambda value: unpack('>H', value[0:2])[0]},
+              'I16': {'pack': lambda value: pack('>h', value)[0:2],  'unpack': lambda value: unpack('>h', value[0:2])[0]},
+              'U8':  {'pack': lambda value: pack('>B', value)[0:1],  'unpack': lambda value: unpack('>B', value[0:1])[0]},
+              'I8':  {'pack': lambda value: pack('>b', value)[0:1],  'unpack': lambda value: unpack('>b', value[0:1])[0]},
+              'U24': {'pack': lambda value: pack('>BH', value)[0:3], 'unpack': lambda value: unpack('>BH', value[0:3])},     # для N.err
+              'STR': {'pack': lambda value: value[::-1],             'unpack': lambda value: value[::-1]}}
 
 
 class Owen(object):
@@ -39,8 +39,6 @@ class Owen(object):
         self.client = client
         self.unit = unit
 
-        self._data_size = 0
-
     def __del__(self):
         if self.client.is_open:
             self.client.close()
@@ -51,31 +49,22 @@ class Owen(object):
 
 # Функции расчета хеш-суммы
 
-    def _fastCalc(self, value, tmp, n):
-        for _ in range(n):
-            value &= 0xFF
-            if (value ^ tmp>>8) & 0x80:
-                tmp <<= 1
-                tmp ^= 0x8F57
-            else:
-                tmp <<= 1
-            tmp &= 0xFFFF
-            value <<= 1
+    def _fast_calc(self, value, crc, n):
+        return reduce(lambda crc, i: (crc<<1 ^ 0x8F57 if (value<<i ^ crc>>8) & 0x80
+                      else crc<<1) & 0xFFFF, range(n), crc)
 
-        return tmp
+    def _owen_crc16(self, packet):
+        return reduce(lambda crc, val: self._fast_calc(val, crc, 8), packet, 0)
 
-    def _owenCRC16(self, packet):
-        return reduce(lambda crc, val: self._fastCalc(val, crc, 8), packet, 0)
-
-    def _owenHash(self, packet):
-        return reduce(lambda crc, val: self._fastCalc(val<<1, crc, 7), packet, 0)
+    def _owen_hash(self, packet):
+        return reduce(lambda crc, val: self._fast_calc(val<<1, crc, 7), packet, 0)
 
     def _name2hash(self, name):
         owen_name = reduce(lambda x, ch: x[:-1] + [x[-1]+1] if ch == '.'
                             else x + [_OWEN_NAME[ch]], name.upper(), [])
-        owen_name += [_OWEN_NAME[' ']] * (4-len(owen_name))
+        owen_name += [_OWEN_NAME[' ']] * (4 - len(owen_name))
 
-        return self._owenHash(owen_name)
+        return self._owen_hash(owen_name)
 
 # Функции упаковки/распаковки пакетов
 
@@ -84,15 +73,15 @@ class Owen(object):
         return '#' + "".join(ascii) + '\r'
 
     def _ascii2bytes(self, buff):
-        return [ord(buff[i])-71 << 4 | ord(buff[i+1])-71 & 0xF
-                for i in range(1, len(buff)-1, 2)]
+        return [ord(i)-71 << 4 | ord(j)-71 & 0xF
+                for i,j in zip(*[iter(buff[1:-1])]*2)]
 
 # Функции упаковки/распаковки данных
 
-    def _packValue(self, frmt, value):
+    def _pack_value(self, frmt, value):
         return _OWEN_TYPE[frmt]['pack'](value)
 
-    def _unpackValue(self, frmt, buff):
+    def _unpack_value(self, frmt, buff):
         if buff:
             try:
                 return _OWEN_TYPE[frmt]['unpack'](buff)
@@ -102,7 +91,7 @@ class Owen(object):
 
 # Функции формирования/разбора пакетов
 
-    def _makepacket(self, address, flag, cmd, data):
+    def _make_packet(self, address, flag, cmd, data):
         if self.addrLen == 8:
             addr0 = address & 0xFF
             addr1 = 0
@@ -113,7 +102,7 @@ class Owen(object):
             raise ValueError("OwenProtocolError: Address length must be 8 or 11")
 
         packet = [addr0, addr1 + (flag << 4) + len(data), cmd>>8 & 0xFF, cmd & 0xFF] + data
-        crc = self._owenCRC16(packet)
+        crc = self._owen_crc16(packet)
 
         _logger.debug("Send param = address:{}, flag:{}, size:{}, cmd:{:04X}, "
                       "data:{}, crc:{:04X}".format(address, flag, len(data), cmd, data, crc))
@@ -129,18 +118,18 @@ class Owen(object):
             return None
 
         frame = self._ascii2bytes(message)
-        # ВНИМАНИЕ: невозможно отличить 11-битные адреса, кратные 8, от 8-битных
-        address = frame[0]<<3 | frame[1]>>5 & 0xff if frame[1] & 0xe0 else frame[0]
+
+        address = frame[0]<<3 | frame[1]>>5 if self.addrLen == 11 else frame[0]
         flag = frame[1] & 0x10
         size = frame[1] & 0xF
         cmd = (frame[2] << 8) + frame[3]
-        data = frame[4: 4+size]
+        data = frame[4: 4 + size]
         crc = (frame[-2] << 8) + frame[-1]
 
         _logger.debug("Recv param = address:{}, flag:{}, size:{}, cmd:{:04X}, "
                       "data:{}, crc:{:04X}".format(address, flag, size, cmd, data, crc))
 
-        if self._owenCRC16(frame[0:-2]) != crc:
+        if self._owen_crc16(frame[0:-2]) != crc:
             _logger.error("OwenProtocolError: Checksumm mismatch")
             return None
         elif name != "N.ERR" and cmd == 0x0233:
@@ -151,14 +140,13 @@ class Owen(object):
 
 # Функции обмена с прибором
 
-    def _getPingPong(self, flag, name, index, data=None):
+    def _get_ping_pong(self, flag, name, index, data=None):
         nhash = self._name2hash(name)
         if data is None: data = []
         if index is not None:
             data.extend([index>>8 & 0xFF, index & 0xFF])
-            self._data_size += 2
 
-        packet = self._makepacket(self.unit, flag, nhash, data)
+        packet = self._make_packet(self.unit, flag, nhash, data)
 
         _logger.debug("Send frame = {!r}, len={}".format(packet, len(packet)))
 
@@ -166,8 +154,7 @@ class Owen(object):
         self.client.reset_output_buffer()
 
         self.client.write(packet)
-        waitbytes = 2 + 6*2 + 2*self._data_size
-        answer = self.client.read(waitbytes)
+        answer = self.client.read_until(b'\r')
 
         _logger.debug("Recv frame = {!r}, len={}".format(answer, len(answer)))
 
@@ -176,14 +163,12 @@ class Owen(object):
 # Функции чтения/записи данных
 
     def getParam(self, frmt, name, index=None):
-        self._data_size = _OWEN_TYPE[frmt]['size']
-        data = self._getPingPong(1, name, index)
-        return self._unpackValue(frmt, data)
+        data = self._get_ping_pong(1, name, index)
+        return self._unpack_value(frmt, data)
 
     def setParam(self, frmt, name, index=None, value=None):
-        data = list(bytearray(self._packValue(frmt, value))) if value is not None else []
-        self._data_size = len(data)
-        return self._getPingPong(0, name, index, data)
+        data = list(bytearray(self._pack_value(frmt, value))) if value is not None else []
+        return self._get_ping_pong(0, name, index, data)
 
 
 __all__ = [ "Owen" ]
