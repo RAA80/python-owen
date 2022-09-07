@@ -3,6 +3,8 @@
 
 
 class Client(object):
+    """ Класс клиента для управления устройствами Овен """
+
     def __init__(self, transport, device, unit):
         self._transport = transport
         self._transport.device = device
@@ -17,10 +19,14 @@ class Client(object):
                  format(self._transport, self._transport.unit))
 
     def getParam(self, name, index=None):
-        return self._transport.getParam(name.upper(), index)
+        """ Чтение данных из устройства """
+
+        return self._transport.get_param(name.upper(), index)
 
     def setParam(self, name, index=None, value=None):
-        return self._transport.setParam(name.upper(), index, value)
+        """ Запись данных в устройство """
+
+        return self._transport.set_param(name.upper(), index, value)
 
 
 __all__ = [ "Client" ]

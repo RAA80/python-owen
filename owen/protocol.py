@@ -31,9 +31,9 @@ _OWEN_TYPE = {'F32': {'pack': lambda value: pack('>f', value)[0:4],  'unpack': l
 
 
 class Owen(object):
-    ''' Класс для работы по протоколу ОВЕН '''
+    ''' Класс, описывающий протокол ОВЕН '''
 
-    addrLen = 8     # длина адреса в битах (8 или 11)
+    addr_len = 8    # длина адреса в битах (8 или 11)
 
     def __init__(self, client, unit):
         self.client = client
@@ -42,60 +42,69 @@ class Owen(object):
     def __del__(self):
         if self.client.is_open:
             self.client.close()
-            self.client = None
 
     def __repr__(self):
-        return ("Owen(client={}, unit={})".format(self.client, self.unit))
+        return "Owen(client={}, unit={})".format(self.client, self.unit)
 
-# Функции расчета хеш-суммы
+    def _fast_calc(self, value, crc, bits):
+        """ Вычисление значения полинома """
 
-    def _fast_calc(self, value, crc, n):
         return reduce(lambda crc, i: (crc<<1 ^ 0x8F57 if (value<<i ^ crc>>8) & 0x80
-                      else crc<<1) & 0xFFFF, range(n), crc)
+                      else crc<<1) & 0xFFFF, range(bits), crc)
 
     def _owen_crc16(self, packet):
+        """ Вычисление контрольной суммы """
+
         return reduce(lambda crc, val: self._fast_calc(val, crc, 8), packet, 0)
 
     def _owen_hash(self, packet):
+        """ Вычисление hash-функции """
+
         return reduce(lambda crc, val: self._fast_calc(val<<1, crc, 7), packet, 0)
 
     def _name2hash(self, name):
+        """ Преобразование локального идентификатора в двоичный вид """
+
         owen_name = reduce(lambda x, ch: x[:-1] + [x[-1]+1] if ch == '.'
-                            else x + [_OWEN_NAME[ch]], name.upper(), [])
+                           else x + [_OWEN_NAME[ch]], name.upper(), [])
         owen_name += [_OWEN_NAME[' ']] * (4 - len(owen_name))
 
         return self._owen_hash(owen_name)
 
-# Функции упаковки/распаковки пакетов
-
     def _bytes2ascii(self, buff):
+        """ Преобразование пакета из бинарного вида в строковый """
+
         ascii = [chr(71 + (num>>4 & 0xF)) + chr(71 + (num & 0xF)) for num in buff]
         return '#' + "".join(ascii) + '\r'
 
     def _ascii2bytes(self, buff):
+        """ Преобразование пакета из строкового вида в бинарный """
+
         return [ord(i)-71 << 4 | ord(j)-71 & 0xF
                 for i,j in zip(*[iter(buff[1:-1])]*2)]
 
-# Функции упаковки/распаковки данных
-
     def _pack_value(self, frmt, value):
+        """ Упаковка данных """
+
         return _OWEN_TYPE[frmt]['pack'](value)
 
     def _unpack_value(self, frmt, buff):
+        """ Распаковка данных """
+
         if buff:
             try:
                 return _OWEN_TYPE[frmt]['unpack'](buff)
             except error:
                 errcode = _OWEN_TYPE['U8']['unpack'](buff)
-                _logger.error("OwenProtocolError: error={:02X}".format(errcode))
-
-# Функции формирования/разбора пакетов
+                _logger.error("OwenProtocolError: error=%02X", errcode)
 
     def _make_packet(self, address, flag, cmd, data):
-        if self.addrLen == 8:
+        """ Формирование пакета для записи в устройство """
+
+        if self.addr_len == 8:
             addr0 = address & 0xFF
             addr1 = 0
-        elif self.addrLen == 11:
+        elif self.addr_len == 11:
             addr0 = address>>3 & 0xFF
             addr1 = (address & 0x07) << 5
         else:
@@ -104,14 +113,16 @@ class Owen(object):
         packet = [addr0, addr1 + (flag << 4) + len(data), cmd>>8 & 0xFF, cmd & 0xFF] + data
         crc = self._owen_crc16(packet)
 
-        _logger.debug("Send param = address:{}, flag:{}, size:{}, cmd:{:04X}, "
-                      "data:{}, crc:{:04X}".format(address, flag, len(data), cmd, data, crc))
+        _logger.debug("Send param: address=%d, flag=%d, size=%d, cmd=%04X, "
+                      "data=%s, crc=%04X", address, flag, len(data), cmd, data, crc)
 
         ret = self._bytes2ascii(packet + [crc>>8 & 0xFF, crc & 0xFF])
 
         return ret.encode("ascii")
 
     def _parse_resp(self, message, name=None):
+        """ Расшифровка прочитанного из устройства пакета """
+
         message = message.decode("ascii")
         if not message or message[0] != "#" or message[-1] != "\r":
             _logger.error("OwenProtocolError: Wrong readed message format")
@@ -119,36 +130,37 @@ class Owen(object):
 
         frame = self._ascii2bytes(message)
 
-        address = frame[0]<<3 | frame[1]>>5 if self.addrLen == 11 else frame[0]
-        flag = frame[1] & 0x10
+        address = frame[0]<<3 | frame[1]>>5 if self.addr_len == 11 else frame[0]
+        flag = frame[1]>>4 & 1
         size = frame[1] & 0xF
         cmd = (frame[2] << 8) + frame[3]
         data = frame[4: 4 + size]
         crc = (frame[-2] << 8) + frame[-1]
 
-        _logger.debug("Recv param = address:{}, flag:{}, size:{}, cmd:{:04X}, "
-                      "data:{}, crc:{:04X}".format(address, flag, size, cmd, data, crc))
+        _logger.debug("Recv param: address=%d, flag=%d, size=%d, cmd=%04X, "
+                      "data=%s, crc=%04X", address, flag, size, cmd, data, crc)
 
         if self._owen_crc16(frame[0:-2]) != crc:
             _logger.error("OwenProtocolError: Checksumm mismatch")
             return None
         elif name != "N.ERR" and cmd == 0x0233:
-            _logger.error("OwenProtocolError: error={:02X}, hash={:02X}{:02X}".format(*data))
+            _logger.error("OwenProtocolError: error=%02X, hash=%02X%02X", *data)
             return None
 
         return bytearray(data)
 
-# Функции обмена с прибором
-
     def _get_ping_pong(self, flag, name, index, data=None):
+        """ Обмен с устройством через порт """
+
         nhash = self._name2hash(name)
-        if data is None: data = []
+        if data is None:
+            data = []
         if index is not None:
             data.extend([index>>8 & 0xFF, index & 0xFF])
 
         packet = self._make_packet(self.unit, flag, nhash, data)
 
-        _logger.debug("Send frame = {!r}, len={}".format(packet, len(packet)))
+        _logger.debug("Send frame: %r, size=%d", packet, len(packet))
 
         self.client.reset_input_buffer()
         self.client.reset_output_buffer()
@@ -156,17 +168,19 @@ class Owen(object):
         self.client.write(packet)
         answer = self.client.read_until(b'\r')
 
-        _logger.debug("Recv frame = {!r}, len={}".format(answer, len(answer)))
+        _logger.debug("Recv frame: %r, size=%d", answer, len(answer))
 
         return answer==packet or self._parse_resp(answer, name)
 
-# Функции чтения/записи данных
+    def get_param(self, frmt, name, index=None):
+        """ Чтение данных из устройства """
 
-    def getParam(self, frmt, name, index=None):
         data = self._get_ping_pong(1, name, index)
         return self._unpack_value(frmt, data)
 
-    def setParam(self, frmt, name, index=None, value=None):
+    def set_param(self, frmt, name, index=None, value=None):
+        """ Запись данных в устройство """
+
         data = list(bytearray(self._pack_value(frmt, value))) if value is not None else []
         return self._get_ping_pong(0, name, index, data)
 

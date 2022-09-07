@@ -18,6 +18,8 @@ _logger.addHandler(logging.NullHandler())
 
 
 class OwenSerialTransport(object):
+    """ Класс транспорта для взаимодействия с устройством по протоколу ОВЕН """
+
     device = None
     unit = None
     addr_len = 8
@@ -29,7 +31,7 @@ class OwenSerialTransport(object):
         self._kwargs = kwargs
 
     def __repr__(self):
-        return ("OwenSerialTransport({})".format(self._socket))
+        return "OwenSerialTransport({})".format(self._socket)
 
     def connect(self):
         if self._socket:
@@ -38,9 +40,9 @@ class OwenSerialTransport(object):
         try:
             self._socket = Serial(*self._args, **self._kwargs)
             self._owen = Owen(self._socket, self.unit)
-            self._owen.addrLen = self.addr_len
+            self._owen.addr_len = self.addr_len
         except SerialException as msg:
-            _logger.error("OwenSerialTransport Error: {}".format(msg))
+            _logger.error("OwenSerialTransport Error: %s", msg)
             self.close()
 
         return self._socket is not None
@@ -49,34 +51,36 @@ class OwenSerialTransport(object):
         if self._socket:
             self._socket.close()
 
-    def _checkParam(self, name, index, value=None):
+    def _check_param(self, dev, name, index, value=None):
         if not index:
-            index = self._dev['index'][0]
+            index = dev['index'][0]
 
-        if index not in self._dev['index']:
+        if index not in dev['index']:
             raise KeyError("OwenSerialTransport Error: This index not supported")
 
         if value is not None:
-            if value < self._dev['min'] or value > self._dev['max']:
+            if value < dev['min'] or value > dev['max']:
                 raise ValueError("OwenSerialTransport Error: Parameter '{}' "
                                  "out of range ({}, {})".
-                                 format(name, self._dev['min'], self._dev['max']))
+                                 format(name, dev['min'], dev['max']))
         return index
 
-    def getParam(self, name, index=None):
-        self._dev = self.device['Owen'][name]
-        index = self._checkParam(name, index)
+    def get_param(self, name, index=None):
+        dev = self.device['Owen'][name]
+        index = self._check_param(dev, name, index)
 
-        return self._owen.getParam(self._dev['type'], name, index)
+        return self._owen.get_param(dev['type'], name, index)
 
-    def setParam(self, name, index=None, value=None):
-        self._dev = self.device['Owen'][name]
-        index = self._checkParam(name, index, value)
+    def set_param(self, name, index=None, value=None):
+        dev = self.device['Owen'][name]
+        index = self._check_param(dev, name, index, value)
 
-        return self._owen.setParam(self._dev['type'], name, index, value)
+        return self._owen.set_param(dev['type'], name, index, value)
 
 
 class OwenModbusTransport(object):
+    """ Класс транспорта для взаимодействия с устройством по протоколу Modbus """
+
     device = None
     unit = None
 
@@ -88,7 +92,7 @@ class OwenModbusTransport(object):
             self._socket = ModbusSerialClient(*args, **kwargs)
 
     def __repr__(self):
-        return ("OwenModbusTransport({})".format(self._socket))
+        return "OwenModbusTransport({})".format(self._socket)
 
     def connect(self):
         self._socket.connect()
@@ -98,18 +102,17 @@ class OwenModbusTransport(object):
         if self._socket:
             self._socket.close()
 
-    def _errorCheck(self, name, retcode):
+    def _error_check(self, name, retcode):
         if not retcode:         # for python2 and pymodbus v1.3.0
-            _logger.error("Unit {} called '{}' with error: "
+            _logger.error("Unit %d called '%s' with error: "
                           "Modbus Error: [Input/Output] No Response received "
-                          "from the remote unit".format(self.unit, name))
+                          "from the remote unit", self.unit, name)
         elif isinstance(retcode, (ModbusException, ExceptionResponse)):
-            _logger.error("Unit {} called '{}' with error: {}".
-                           format(self.unit, name, retcode))
+            _logger.error("Unit %d called '%s' with error: %s", self.unit, name, retcode)
         else:
             return True
 
-    def _checkParam(self, dev, name, index, value=None):
+    def _check_param(self, dev, name, index, value=None):
         if not index:
             if None in dev['index']: index = None
             elif 0 in dev['index']:  index = 0
@@ -125,7 +128,7 @@ class OwenModbusTransport(object):
         return index
 
     def _get(self, dev, name, index):
-        index = self._checkParam(dev, name, index)
+        index = self._check_param(dev, name, index)
 
         if dev['type'] == "STR": count = 4
         elif dev['type'] in ["I32", "U32", "F32"]: count = 2
@@ -134,7 +137,7 @@ class OwenModbusTransport(object):
         result = self._socket.read_holding_registers(address=dev['index'][index],
                                                      count=count,
                                                      unit=self.unit)
-        if self._errorCheck(name, result):
+        if self._error_check(name, result):
             if int(version.short()[0]) > 1:
                 decoder = BinaryPayloadDecoder.fromRegisters(registers=result.registers,
                                                              byteorder=Endian.Big,
@@ -149,7 +152,7 @@ class OwenModbusTransport(object):
             elif dev['type'] == "F32": return decoder.decode_32bit_float()
             elif dev['type'] == "STR": return decoder.decode_string(8)
 
-    def getParam(self, name, index=None):
+    def get_param(self, name, index=None):
         dev = self.device['Modbus'][name]
 
         if dev['dp'][0]:
@@ -162,10 +165,10 @@ class OwenModbusTransport(object):
         prec = dev['precision']
         return ret if not prec else ret/10.0**prec
 
-    def setParam(self, name, index=None, value=None):
+    def set_param(self, name, index=None, value=None):
         dev = self.device['Modbus'][name]
 
-        index = self._checkParam(dev, name, index, value)
+        index = self._check_param(dev, name, index, value)
 
         if dev['dp'][0]:
             _dev = self.device['Modbus'][dev['dp'][1]]
@@ -193,7 +196,7 @@ class OwenModbusTransport(object):
                                               values=builder.build(),
                                               skip_encode=True,
                                               unit=self.unit)
-        return self._errorCheck(name, result)
+        return self._error_check(name, result)
 
 
 __all__ = [ "OwenSerialTransport", "OwenModbusTransport" ]

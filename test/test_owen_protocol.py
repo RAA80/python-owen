@@ -42,8 +42,6 @@ class OwenProtocolTest(unittest.TestCase):
     def tearDown(self):
         del self.trm
 
-# Функции расчета хеш-суммы
-
     def test_fast_calc(self):
         self.assertEqual(20158, self.trm._fast_calc(84, 159, 7))
         self.assertEqual(5565, self.trm._fast_calc(18, 36695, 8))
@@ -82,8 +80,6 @@ class OwenProtocolTest(unittest.TestCase):
         self.assertEqual(11410, self.trm._name2hash("EV-1"))
         self.assertEqual(233, self.trm._name2hash("INIT"))
 
-# Функции упаковки/распаковки пакетов
-
     def test_bytes2ascii(self):
         self.assertEqual("#GHHGHUTIKGJI\r", self.trm._bytes2ascii([1, 16, 30, 210, 64, 50]))
         self.assertEqual("#GHGHHUTIGGJKGK\r", self.trm._bytes2ascii([1, 1, 30, 210, 0, 52, 4]))
@@ -105,8 +101,6 @@ class OwenProtocolTest(unittest.TestCase):
         self.assertEqual([1, 3, 2, 51, 71, 100, 234, 99, 78], self.trm._ascii2bytes("#GHGJGIJJKNMKUQMJKU\r"))
         self.assertEqual([1, 1, 30, 37, 20, 126, 6], self.trm._ascii2bytes("#GHGHHUILHKNUGM\r"))
 
-# Функции упаковки/распаковки данных
-
     def test_pack_value(self):
         self.assertEqual(bytearray([66, 246, 233, 223]), self.trm._pack_value("F32", 123.45678))
         self.assertEqual(bytearray([66, 246, 233]), self.trm._pack_value("F24", 123.45678))
@@ -126,8 +120,6 @@ class OwenProtocolTest(unittest.TestCase):
         self.assertEqual(-12, self.trm._unpack_value("I8", bytearray([244])))
         self.assertEqual(b"TEST", self.trm._unpack_value("STR", bytearray([84, 83, 69, 84])))
 
-# Функции формирования/разбора пакетов
-
     def test_make_packet(self):
         self.assertEqual(b"#GHHGHUTIKGJI\r", self.trm._make_packet(1, 1, 7890, []))
         self.assertEqual(b"#GHHISOOGGGGGQSUR\r", self.trm._make_packet(1, 1, 51328, [0, 0]))
@@ -145,21 +137,17 @@ class OwenProtocolTest(unittest.TestCase):
         self.assertEqual(bytearray([71, 180, 101]), self.trm._parse_resp(b"#GHGJGIJJKNRKMLLNJK\r", "N.ERR"))
         self.assertEqual(bytearray([100]), self.trm._parse_resp(b"#GHGHJONIMKKIMP\r", "REST"))
 
-# Функции чтения данных
+    def test_get_param(self):
+        self.assertEqual(b'\xd2\xd0\xcc201', self.trm.get_param(frmt="STR", name="DEV"))
+        self.assertEqual(0, self.trm.get_param(frmt="U8", name="A.LEn"))
+        self.assertEqual(1, self.trm.get_param(frmt="U16", name="Addr"))
+        self.assertEqual(1300.0, self.trm.get_param(frmt="F24", name="SL.H", index=0))
+        self.assertEqual((0,0), self.trm.get_param(frmt="U24", name="N.ERR"))
 
-    def test_getParam(self):
-        self.assertEqual(b'\xd2\xd0\xcc201', self.trm.getParam(frmt="STR", name="DEV"))
-        self.assertEqual(0, self.trm.getParam(frmt="U8", name="A.LEn"))
-        self.assertEqual(1, self.trm.getParam(frmt="U16", name="Addr"))
-        self.assertEqual(1300.0, self.trm.getParam(frmt="F24", name="SL.H", index=0))
-        self.assertEqual((0,0), self.trm.getParam(frmt="U24", name="N.ERR"))
-
-# Функции записи данных
-
-    def test_setParam(self):
-        self.assertEqual(True, self.trm.setParam(frmt="U8", name="A.LEn", index=None, value=0))
-        self.assertEqual(True, self.trm.setParam(frmt="U16", name="Addr", index=None, value=1))
-        self.assertEqual(True, self.trm.setParam(frmt="F24", name="SL.H", index=0, value=1300.0))
+    def test_set_param(self):
+        self.assertEqual(True, self.trm.set_param(frmt="U8", name="A.LEn", index=None, value=0))
+        self.assertEqual(True, self.trm.set_param(frmt="U16", name="Addr", index=None, value=1))
+        self.assertEqual(True, self.trm.set_param(frmt="F24", name="SL.H", index=0, value=1300.0))
 
 
 if __name__ == "__main__":
