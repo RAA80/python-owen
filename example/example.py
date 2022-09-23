@@ -18,6 +18,7 @@ if __name__ == "__main__":
                                     parity='N',
                                     bytesize=8,
                                     timeout=0.1)
+    #transport.addr_len = 8         # для изменения длины адреса (8 или 11)
 
     #transport = OwenModbusTransport(method="rtu",
     #                                port="COM5",

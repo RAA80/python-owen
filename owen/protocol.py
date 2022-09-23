@@ -49,8 +49,8 @@ class Owen(object):
     def _fast_calc(self, value, crc, bits):
         """ Вычисление значения полинома """
 
-        return reduce(lambda crc, i: (crc<<1 ^ 0x8F57 if (value<<i ^ crc>>8) & 0x80
-                      else crc<<1) & 0xFFFF, range(bits), crc)
+        return reduce(lambda crc, i: crc<<1 & 0xFFFF ^ (0x8F57
+                      if (value<<i ^ crc>>8) & 0x80 else 0), range(bits), crc)
 
     def _owen_crc16(self, packet):
         """ Вычисление контрольной суммы """

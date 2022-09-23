@@ -155,9 +155,9 @@ class OwenModbusTransport(object):
     def get_param(self, name, index=None):
         dev = self.device['Modbus'][name]
 
-        if dev['dp'][0]:
-            _dev = self.device['Modbus'][dev['dp'][1]]
-            dp = self._get(_dev, dev['dp'][1], index)
+        if dev['dp']:
+            _dev = self.device['Modbus'][dev['dp']]
+            dp = self._get(_dev, dev['dp'], index)
             ret = self._get(dev, name, index)/10.0**dp
         else:
             ret = self._get(dev, name, index)
@@ -170,9 +170,9 @@ class OwenModbusTransport(object):
 
         index = self._check_param(dev, name, index, value)
 
-        if dev['dp'][0]:
-            _dev = self.device['Modbus'][dev['dp'][1]]
-            dp = self._get(_dev, dev['dp'][1], index)
+        if dev['dp']:
+            _dev = self.device['Modbus'][dev['dp']]
+            dp = self._get(_dev, dev['dp'], index)
             value *= 10.0**dp
             sleep(0.05)     # ???
 
