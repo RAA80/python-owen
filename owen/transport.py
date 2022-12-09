@@ -17,7 +17,49 @@ _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
 
 
-class OwenSerialTransport(object):
+class BaseTransport(object):
+    """ Базовый класс транспорта для взаимодействия с устройством """
+
+    def __init__(self, *args, **kwargs):
+        self._socket = None
+
+    def __repr__(self):
+        return "{}({})".format(type(self).__name__, self._socket)
+
+    def __del__(self):
+        self.close()
+
+    def connect(self):
+        raise NotImplementedError()
+
+    def close(self):
+        if self._socket:
+            self._socket.close()
+        self._socket = None
+
+    def get_param(self, name, index=None):
+        raise NotImplementedError()
+
+    def set_param(self, name, index=None, value=None):
+        raise NotImplementedError()
+
+    def check_param(self, dev, name, index, value=None):
+        if not index:
+            if None in dev['index']: index = None
+            elif 0 in dev['index']:  index = 0
+
+        if index not in dev['index']:
+            raise ValueError("{}: Parameter '{}' not supported index {}".
+                             format(type(self).__name__, name, index))
+        if value is not None:
+            if value < dev['min'] or value > dev['max']:
+                raise ValueError("{}: Parameter '{}' out of range ({}, {}) value {}".
+                                 format(type(self).__name__, name, dev['min'],
+                                        dev['max'], value))
+        return index
+
+
+class OwenSerialTransport(BaseTransport):
     """ Класс транспорта для взаимодействия с устройством по протоколу ОВЕН """
 
     device = None
@@ -25,13 +67,12 @@ class OwenSerialTransport(object):
     addr_len = 8
 
     def __init__(self, *args, **kwargs):
+        super(OwenSerialTransport, self).__init__(args, kwargs)
+
         self._owen = None
         self._socket = None
         self._args = args
         self._kwargs = kwargs
-
-    def __repr__(self):
-        return "OwenSerialTransport({})".format(self._socket)
 
     def connect(self):
         if self._socket:
@@ -42,65 +83,41 @@ class OwenSerialTransport(object):
             self._owen = Owen(self._socket, self.unit)
             self._owen.addr_len = self.addr_len
         except SerialException as msg:
-            _logger.error("OwenSerialTransport Error: %s", msg)
+            _logger.error(msg)
             self.close()
 
         return self._socket is not None
 
-    def close(self):
-        if self._socket:
-            self._socket.close()
-
-    def _check_param(self, dev, name, index, value=None):
-        if not index:
-            index = dev['index'][0]
-
-        if index not in dev['index']:
-            raise KeyError("OwenSerialTransport Error: This index not supported")
-
-        if value is not None:
-            if value < dev['min'] or value > dev['max']:
-                raise ValueError("OwenSerialTransport Error: Parameter '{}' "
-                                 "out of range ({}, {})".
-                                 format(name, dev['min'], dev['max']))
-        return index
-
     def get_param(self, name, index=None):
         dev = self.device['Owen'][name]
-        index = self._check_param(dev, name, index)
+        index = self.check_param(dev, name, index)
 
         return self._owen.get_param(dev['type'], name, index)
 
     def set_param(self, name, index=None, value=None):
         dev = self.device['Owen'][name]
-        index = self._check_param(dev, name, index, value)
+        index = self.check_param(dev, name, index, value)
 
         return self._owen.set_param(dev['type'], name, index, value)
 
 
-class OwenModbusTransport(object):
+class OwenModbusTransport(BaseTransport):
     """ Класс транспорта для взаимодействия с устройством по протоколу Modbus """
 
     device = None
     unit = None
 
     def __init__(self, *args, **kwargs):
+        super(OwenModbusTransport, self).__init__(args, kwargs)
+
         socket = kwargs.get("socket", None)
         if socket is not None:
             self._socket = socket
         else:
             self._socket = ModbusSerialClient(*args, **kwargs)
 
-    def __repr__(self):
-        return "OwenModbusTransport({})".format(self._socket)
-
     def connect(self):
-        self._socket.connect()
-        return self._socket is not None
-
-    def close(self):
-        if self._socket:
-            self._socket.close()
+        return self._socket.connect()
 
     def _error_check(self, name, retcode):
         if not retcode:         # for python2 and pymodbus v1.3.0
@@ -112,23 +129,8 @@ class OwenModbusTransport(object):
         else:
             return True
 
-    def _check_param(self, dev, name, index, value=None):
-        if not index:
-            if None in dev['index']: index = None
-            elif 0 in dev['index']:  index = 0
-
-        if index not in dev['index']:
-            raise KeyError("OwenModbusTransport Error: This index not supported")
-
-        if value is not None:
-            if value < dev['min'] or value > dev['max']:
-                raise ValueError("OwenModbusTransport Error: Parameter '{}' "
-                                 "out of range ({}, {})".
-                                 format(name, dev['min'], dev['max']))
-        return index
-
     def _get(self, dev, name, index):
-        index = self._check_param(dev, name, index)
+        index = self.check_param(dev, name, index)
 
         if dev['type'] == "STR": count = 4
         elif dev['type'] in ["I32", "U32", "F32"]: count = 2
@@ -168,7 +170,7 @@ class OwenModbusTransport(object):
     def set_param(self, name, index=None, value=None):
         dev = self.device['Modbus'][name]
 
-        index = self._check_param(dev, name, index, value)
+        index = self.check_param(dev, name, index, value)
 
         if dev['dp']:
             _dev = self.device['Modbus'][dev['dp']]

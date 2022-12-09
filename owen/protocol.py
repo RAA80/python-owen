@@ -39,10 +39,6 @@ class Owen(object):
         self.client = client
         self.unit = unit
 
-    def __del__(self):
-        if self.client.is_open:
-            self.client.close()
-
     def __repr__(self):
         return "Owen(client={}, unit={})".format(self.client, self.unit)
 
