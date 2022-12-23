@@ -64,7 +64,7 @@ class OwenSerialTransport(BaseTransport):
 
     device = None
     unit = None
-    addr_len = 8
+    addr_len_8 = True
 
     def __init__(self, *args, **kwargs):
         super(OwenSerialTransport, self).__init__(args, kwargs)
@@ -81,7 +81,7 @@ class OwenSerialTransport(BaseTransport):
         try:
             self._socket = Serial(*self._args, **self._kwargs)
             self._owen = Owen(self._socket, self.unit)
-            self._owen.addr_len = self.addr_len
+            self._owen.addr_len_8 = self.addr_len_8
         except SerialException as msg:
             _logger.error(msg)
             self.close()

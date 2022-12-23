@@ -18,7 +18,7 @@ if __name__ == "__main__":
                                     parity='N',
                                     bytesize=8,
                                     timeout=0.1)
-    #transport.addr_len = 8         # для изменения длины адреса (8 или 11)
+    #transport.addr_len_8 = True    # длина адреса в битах: True=8, False=11
 
     #transport = OwenModbusTransport(method="rtu",
     #                                port="COM5",
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     #                                retry_on_empty=True)
 
     trm = Client(transport=transport, device=TRM201, unit=1)
-    print (trm)
+    print(trm)
 
     ''' !!!
         Если параметр не использует индекс, т.е. index=None,

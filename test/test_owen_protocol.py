@@ -8,31 +8,26 @@ from owen.protocol import Owen
 
 class TRM(Owen):
     def __init__(self, client, unit):
-        Owen.__init__(self, client, unit)
-        self.client = client
-        self.unit = unit
+        super(TRM, self).__init__(client, unit)
 
-    def _get_ping_pong(self, flag, name, index, data=None):
-        nhash = self._name2hash(name)
-        if data is None: data = []
-        if index is not None: data.extend([index>>8 & 0xFF, index & 0xFF])
+    def _get_ping_pong(self, packet):
+        return {b'#GHHGTMOHHRTO\r': b'#GHGMTMOHJHJGJISSTGTIPLKK\r',         # чтение параметра "DEV" тип "STR"
+                b'#GHHGHUTIKGJI\r': b'#GHGHHUTIGGJKGK\r',                   # чтение параметра "A.LEN" тип "U8" без индекса
+                b'#GHHIRJURGGGGHQIV\r': b'#GHGJRJURGHGGGGQROU\r',           # чтение параметра "DP" тип "U8" с индексом
+                b'#GHHGPVMIJIMK\r': b'#GHGIPVMIGGGHNHIR\r',                 # чтение параметра "ADDR" тип "U16" без индекса
+                b'#GHHGROTVJNPQ\r': b'#GHGJROTVKIQJIOOJKN\r',               # чтение параметра "PV" тип "F24" без индекса
+                b'#GHHIUSIGGGGGTJIT\r': b'#GHGLUSIGKKJROGGGGGPVUS\r',       # чтение параметра "SL.H" тип "F24" с индексом
+                b'#GHHGGIJJRIQN\r': b'#GHGJGIJJKNRKMLLNJK\r',               # чтение параметра "N.ERR" тип "U24"
 
-        packet = self._make_packet(address=self.unit, flag=flag, cmd=nhash, data=data)
-
-        if name == "DEV" and flag: answer = b'#GHGMTMOHJHJGJISSTGTIPLKK\r'
-        elif name == "A.LEn" and flag: answer = b'#GHGHHUTIGGJKGK\r'
-        elif name == "Addr" and flag: answer = b'#GHGIPVMIGGGHNHIR\r'
-        elif name == "SL.H" and flag: answer = b'#GHGLUSIGKKQIOGGGGGULNP\r'
-        elif name == "N.ERR" and flag: answer = b'#GHGJGIJJGGGGGGNILN\r'
-
-        elif name == "A.LEn" and not flag: answer = b'#GHGHHUTIGGJKGK\r'
-        elif name == "Addr" and not flag: answer = b'#GHGIPVMIGGGHNHIR\r'
-        elif name == "SL.H" and not flag: answer = b'#GHGLUSIGKKQIOGGGGGULNP\r'
-
-        return answer==packet or self._parse_resp(answer, name)
+                b'#GHGHHUTIGGJKGK\r': b'#GHGHHUTIGGJKGK\r',                 # запись параметра "A.LEN" тип "U8" без индекса
+                b'#GHGJQLQRGHGGGGPNOJ\r': b'#GHGJQLQRGHGGGGPNOJ\r',         # запись параметра "CMP" тип "U8" с индексом
+                b'#GHGIPVMIGGGHNHIR\r': b'#GHGIPVMIGGGHNHIR\r',             # запись параметра "ADDR" тип "U16" без индекса
+                b'#GHGJPPKMGGGGGGQMGJ\r': b'#GHGJPPKMGGGGGGQMGJ\r',         # запись параметра "R.OUT" тип "F24" без индекса
+                b'#GHGLUSIGKKJROGGGGGPVUS\r': b'#GHGLUSIGKKJROGGGGGPVUS\r', # запись параметра "SL.H" тип "F24" с индексом
+               }[packet]
 
 
-class OwenProtocolTest(unittest.TestCase):
+class TestOwenProtocol(unittest.TestCase):
     ''' This is the unittest for Owen protocol '''
 
     def setUp(self):
@@ -121,33 +116,37 @@ class OwenProtocolTest(unittest.TestCase):
         self.assertEqual(b"TEST", self.trm._unpack_value("STR", bytearray([84, 83, 69, 84])))
 
     def test_make_packet(self):
-        self.assertEqual(b"#GHHGHUTIKGJI\r", self.trm._make_packet(1, 1, 7890, []))
-        self.assertEqual(b"#GHHISOOGGGGGQSUR\r", self.trm._make_packet(1, 1, 51328, [0, 0]))
-        self.assertEqual(b"#GHGLJPVJGGGGGGGGGGGRJJ\r", self.trm._make_packet(1, 0, 14835, [0, 0, 0, 0, 0]))
-        self.assertEqual(b"#GHGLUHNTSJKNUMGGGGLPTV\r", self.trm._make_packet(1, 0, 57725, [195, 71, 230, 0, 0]))
-        self.assertEqual(b"#GHGHRNIUGGMJSQ\r", self.trm._make_packet(1, 0, 46894, [0]))
-        self.assertEqual(b"#GHGLPHGNKHSOGGGGGGJOMV\r", self.trm._make_packet(1, 0, 37127, [65, 200, 0, 0, 0]))
-        self.assertEqual(b"#GHGHRNMGGORMUL\r", self.trm._make_packet(1, 0, 46944, [8]))
+        self.assertEqual(b"#GHHGHUTIKGJI\r", self.trm._make_packet(1, 7890, None, []))
+        self.assertEqual(b"#GHHISOOGGGGGQSUR\r", self.trm._make_packet(1, 51328, 0, []))
+        self.assertEqual(b"#GHGLJPVJGGGGGGGGGGGRJJ\r", self.trm._make_packet(0, 14835, 0, [0, 0, 0]))
+        self.assertEqual(b"#GHGLUHNTSJKNUMGGGGLPTV\r", self.trm._make_packet(0, 57725, 0, [195, 71, 230]))
+        self.assertEqual(b"#GHGHRNIUGGMJSQ\r", self.trm._make_packet(0, 46894, None, [0]))
+        self.assertEqual(b"#GHGLPHGNKHSOGGGGGGJOMV\r", self.trm._make_packet(0, 37127, 0, [65, 200, 0]))
+        self.assertEqual(b"#GHGHRNMGGORMUL\r", self.trm._make_packet(0, 46944, None, [8]))
 
-    def test_parse_resp(self):
-        self.assertEqual(bytearray([0]), self.trm._parse_resp(b"#GHGHHUTIGGJKGK\r", "A.LEn"))
-        self.assertEqual(bytearray([0, 0, 0]), self.trm._parse_resp(b"#GHGJSOOGGGGGGGUQRK\r", "DON"))
-        self.assertEqual(bytearray([195, 71, 230, 0, 0]), self.trm._parse_resp(b"#GHGLUHNTSJKNUMGGGGLPTV\r", "SL.L"))
-        self.assertEqual(bytearray([52, 48, 48, 48, 46, 51, 48, 86]), self.trm._parse_resp(b"#GHGOITLRJKJGJGJGIUJJJGLMUPPR\r", "VER"))
-        self.assertEqual(bytearray([71, 180, 101]), self.trm._parse_resp(b"#GHGJGIJJKNRKMLLNJK\r", "N.ERR"))
-        self.assertEqual(bytearray([100]), self.trm._parse_resp(b"#GHGHJONIMKKIMP\r", "REST"))
+    def test_parse_response(self):
+        self.assertEqual(bytearray([0]), self.trm._parse_response(b"#GHGHHUTIGGJKGK\r", "A.LEn"))
+        self.assertEqual(bytearray([0, 0, 0]), self.trm._parse_response(b"#GHGJSOOGGGGGGGUQRK\r", "DON"))
+        self.assertEqual(bytearray([195, 71, 230, 0, 0]), self.trm._parse_response(b"#GHGLUHNTSJKNUMGGGGLPTV\r", "SL.L"))
+        self.assertEqual(bytearray([52, 48, 48, 48, 46, 51, 48, 86]), self.trm._parse_response(b"#GHGOITLRJKJGJGJGIUJJJGLMUPPR\r", "VER"))
+        self.assertEqual(bytearray([71, 180, 101]), self.trm._parse_response(b"#GHGJGIJJKNRKMLLNJK\r", "N.ERR"))
+        self.assertEqual(bytearray([100]), self.trm._parse_response(b"#GHGHJONIMKKIMP\r", "REST"))
 
     def test_get_param(self):
         self.assertEqual(b'\xd2\xd0\xcc201', self.trm.get_param(frmt="STR", name="DEV"))
-        self.assertEqual(0, self.trm.get_param(frmt="U8", name="A.LEn"))
-        self.assertEqual(1, self.trm.get_param(frmt="U16", name="Addr"))
-        self.assertEqual(1300.0, self.trm.get_param(frmt="F24", name="SL.H", index=0))
-        self.assertEqual((0,0), self.trm.get_param(frmt="U24", name="N.ERR"))
+        self.assertEqual(0, self.trm.get_param(frmt="U8", name="A.LEN"))
+        self.assertEqual(1, self.trm.get_param(frmt="U8", name="DP", index=0))
+        self.assertEqual(1, self.trm.get_param(frmt="U16", name="ADDR"))
+        self.assertEqual(81.578125, self.trm.get_param(frmt="F24", name="PV"))
+        self.assertEqual(750.0, self.trm.get_param(frmt="F24", name="SL.H", index=0))
+        self.assertEqual((71, 46181), self.trm.get_param(frmt="U24", name="N.ERR"))
 
     def test_set_param(self):
-        self.assertEqual(True, self.trm.set_param(frmt="U8", name="A.LEn", index=None, value=0))
-        self.assertEqual(True, self.trm.set_param(frmt="U16", name="Addr", index=None, value=1))
-        self.assertEqual(True, self.trm.set_param(frmt="F24", name="SL.H", index=0, value=1300.0))
+        self.assertEqual(True, self.trm.set_param(frmt="U8", name="A.LEN", index=None, value=0))
+        self.assertEqual(True, self.trm.set_param(frmt="U8", name="CMP", index=0, value=1))
+        self.assertEqual(True, self.trm.set_param(frmt="U16", name="ADDR", index=None, value=1))
+        self.assertEqual(True, self.trm.set_param(frmt="F24", name="R.OUT", index=None, value=0.0))
+        self.assertEqual(True, self.trm.set_param(frmt="F24", name="SL.H", index=0, value=750.0))
 
 
 if __name__ == "__main__":

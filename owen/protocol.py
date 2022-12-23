@@ -33,7 +33,7 @@ _OWEN_TYPE = {'F32': {'pack': lambda value: pack('>f', value)[0:4],  'unpack': l
 class Owen(object):
     ''' Класс, описывающий протокол ОВЕН '''
 
-    addr_len = 8    # длина адреса в битах (8 или 11)
+    addr_len_8 = True    # длина адреса в битах: True=8, False=11
 
     def __init__(self, client, unit):
         self.client = client
@@ -94,30 +94,28 @@ class Owen(object):
                 errcode = _OWEN_TYPE['U8']['unpack'](buff)
                 _logger.error("OwenProtocolError: error=%02X", errcode)
 
-    def _make_packet(self, address, flag, cmd, data):
-        """ Формирование пакета для записи в устройство """
+    def _make_packet(self, flag, cmd, index, data):
+        """ Формирование пакета для записи """
 
-        if self.addr_len == 8:
-            addr0 = address & 0xFF
-            addr1 = 0
-        elif self.addr_len == 11:
-            addr0 = address>>3 & 0xFF
-            addr1 = (address & 0x07) << 5
-        else:
-            raise ValueError("OwenProtocolError: Address length must be 8 or 11")
+        addr0, addr1 = (self.unit & 0xFF, 0) if self.addr_len_8 \
+                       else (self.unit>>3 & 0xFF, (self.unit & 0x07) << 5)
+        if data is None:
+            data = []
+        if index is not None:
+            data.extend([index>>8 & 0xFF, index & 0xFF])
 
         packet = [addr0, addr1 + (flag << 4) + len(data), cmd>>8 & 0xFF, cmd & 0xFF] + data
         crc = self._owen_crc16(packet)
 
         _logger.debug("Send param: address=%d, flag=%d, size=%d, cmd=%04X, "
-                      "data=%s, crc=%04X", address, flag, len(data), cmd, data, crc)
+                      "data=%s, crc=%04X", self.unit, flag, len(data), cmd, data, crc)
 
         ret = self._bytes2ascii(packet + [crc>>8 & 0xFF, crc & 0xFF])
 
         return ret.encode("ascii")
 
-    def _parse_resp(self, message, name=None):
-        """ Расшифровка прочитанного из устройства пакета """
+    def _parse_response(self, message, name=None):
+        """ Расшифровка прочитанного пакета """
 
         message = message.decode("ascii")
         if not message or message[0] != "#" or message[-1] != "\r":
@@ -126,7 +124,7 @@ class Owen(object):
 
         frame = self._ascii2bytes(message)
 
-        address = frame[0]<<3 | frame[1]>>5 if self.addr_len == 11 else frame[0]
+        address = frame[0] if self.addr_len_8 else frame[0]<<3 | frame[1]>>5
         flag = frame[1]>>4 & 1
         size = frame[1] & 0xF
         cmd = (frame[2] << 8) + frame[3]
@@ -139,46 +137,44 @@ class Owen(object):
         if self._owen_crc16(frame[0:-2]) != crc:
             _logger.error("OwenProtocolError: Checksumm mismatch")
             return None
-        elif name != "N.ERR" and cmd == 0x0233:
+        if name != "N.ERR" and cmd == 0x0233:
             _logger.error("OwenProtocolError: error=%02X, hash=%02X%02X", *data)
             return None
 
         return bytearray(data)
 
-    def _get_ping_pong(self, flag, name, index, data=None):
-        """ Обмен с устройством через порт """
+    def _data_exchange(self, flag, name, index, data=None):
+        """ Подготовка данных для записи """
 
-        nhash = self._name2hash(name)
-        if data is None:
-            data = []
-        if index is not None:
-            data.extend([index>>8 & 0xFF, index & 0xFF])
-
-        packet = self._make_packet(self.unit, flag, nhash, data)
+        cmd = self._name2hash(name)
+        packet = self._make_packet(flag, cmd, index, data)
 
         _logger.debug("Send frame: %r, size=%d", packet, len(packet))
+        answer = self._get_ping_pong(packet)
+        _logger.debug("Recv frame: %r, size=%d", answer, len(answer))
+
+        return answer==packet or self._parse_response(answer, name)
+
+    def _get_ping_pong(self, packet):
+        """ Обмен данными с устройством через порт """
 
         self.client.reset_input_buffer()
         self.client.reset_output_buffer()
 
         self.client.write(packet)
-        answer = self.client.read_until(b'\r')
-
-        _logger.debug("Recv frame: %r, size=%d", answer, len(answer))
-
-        return answer==packet or self._parse_resp(answer, name)
+        return self.client.read_until(b'\r')
 
     def get_param(self, frmt, name, index=None):
         """ Чтение данных из устройства """
 
-        data = self._get_ping_pong(1, name, index)
+        data = self._data_exchange(1, name, index)
         return self._unpack_value(frmt, data)
 
     def set_param(self, frmt, name, index=None, value=None):
         """ Запись данных в устройство """
 
         data = list(bytearray(self._pack_value(frmt, value))) if value is not None else []
-        return self._get_ping_pong(0, name, index, data)
+        return self._data_exchange(0, name, index, data)
 
 
 __all__ = [ "Owen" ]
