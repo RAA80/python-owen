@@ -97,13 +97,14 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual([1, 1, 30, 37, 20, 126, 6], self.trm._ascii2bytes("#GHGHHUILHKNUGM\r"))
 
     def test_pack_value(self):
-        self.assertEqual(bytearray([66, 246, 233, 223]), self.trm._pack_value("F32", 123.45678))
-        self.assertEqual(bytearray([66, 246, 233]), self.trm._pack_value("F24", 123.45678))
-        self.assertEqual(bytearray([4, 210]), self.trm._pack_value("U16", 1234))
-        self.assertEqual(bytearray([251, 46]), self.trm._pack_value("I16", -1234))
-        self.assertEqual(bytearray([12]), self.trm._pack_value("U8", 12))
-        self.assertEqual(bytearray([244]), self.trm._pack_value("I8", -12))
-        self.assertEqual(bytearray([84, 83, 69, 84]), self.trm._pack_value("STR", b"TEST"))
+        self.assertEqual([66, 246, 233, 223], self.trm._pack_value("F32", 123.45678))
+        self.assertEqual([66, 246, 233], self.trm._pack_value("F24", 123.45678))
+        self.assertEqual([4, 210], self.trm._pack_value("U16", 1234))
+        self.assertEqual([251, 46], self.trm._pack_value("I16", -1234))
+        self.assertEqual([12], self.trm._pack_value("U8", 12))
+        self.assertEqual([244], self.trm._pack_value("I8", -12))
+        self.assertEqual([84, 83, 69, 84], self.trm._pack_value("STR", b"TEST"))
+        self.assertIsNone(self.trm._pack_value("U8", None))
 
     def test_unpack_value(self):
         self.assertEqual(123.45677947998047, self.trm._unpack_value("F32", bytearray([66, 246, 233, 223])))
@@ -114,6 +115,7 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual(12, self.trm._unpack_value("U8", bytearray([12])))
         self.assertEqual(-12, self.trm._unpack_value("I8", bytearray([244])))
         self.assertEqual(b"TEST", self.trm._unpack_value("STR", bytearray([84, 83, 69, 84])))
+        self.assertIsNone(self.trm._unpack_value("U8", None))
 
     def test_make_packet(self):
         self.assertEqual(b"#GHHGHUTIKGJI\r", self.trm._make_packet(1, 7890, None, []))

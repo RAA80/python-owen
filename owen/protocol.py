@@ -70,8 +70,8 @@ class Owen(object):
     def _bytes2ascii(self, buff):
         """ Преобразование пакета из бинарного вида в строковый """
 
-        ascii = [chr(71 + (num>>4 & 0xF)) + chr(71 + (num & 0xF)) for num in buff]
-        return '#' + "".join(ascii) + '\r'
+        chars = [chr(71 + (num>>4 & 0xF)) + chr(71 + (num & 0xF)) for num in buff]
+        return '#' + "".join(chars) + '\r'
 
     def _ascii2bytes(self, buff):
         """ Преобразование пакета из строкового вида в бинарный """
@@ -82,7 +82,8 @@ class Owen(object):
     def _pack_value(self, frmt, value):
         """ Упаковка данных """
 
-        return _OWEN_TYPE[frmt]['pack'](value)
+        if value is not None:
+            return list(bytearray(_OWEN_TYPE[frmt]['pack'](value)))
 
     def _unpack_value(self, frmt, buff):
         """ Распаковка данных """
@@ -114,15 +115,15 @@ class Owen(object):
 
         return ret.encode("ascii")
 
-    def _parse_response(self, message, name=None):
+    def _parse_response(self, answer, name=None):
         """ Расшифровка прочитанного пакета """
 
-        message = message.decode("ascii")
-        if not message or message[0] != "#" or message[-1] != "\r":
+        answer = answer.decode("ascii")
+        if not answer or answer[0] != "#" or answer[-1] != "\r":
             _logger.error("OwenProtocolError: Wrong readed message format")
             return None
 
-        frame = self._ascii2bytes(message)
+        frame = self._ascii2bytes(answer)
 
         address = frame[0] if self.addr_len_8 else frame[0]<<3 | frame[1]>>5
         flag = frame[1]>>4 & 1
@@ -173,7 +174,7 @@ class Owen(object):
     def set_param(self, frmt, name, index=None, value=None):
         """ Запись данных в устройство """
 
-        data = list(bytearray(self._pack_value(frmt, value))) if value is not None else []
+        data = self._pack_value(frmt, value) or []
         return self._data_exchange(0, name, index, data)
 
 
