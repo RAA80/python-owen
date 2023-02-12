@@ -9,16 +9,14 @@ from functools import reduce
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
 
-_OWEN_NAME = {'0': 0,  'A': 20, 'K': 40, 'U': 60,
-              '1': 2,  'B': 22, 'L': 42, 'V': 62,
-              '2': 4,  'C': 24, 'M': 44, 'W': 64,
-              '3': 6,  'D': 26, 'N': 46, 'X': 66,
-              '4': 8,  'E': 28, 'O': 48, 'Y': 68,
-              '5': 10, 'F': 30, 'P': 50, 'Z': 70,
-              '6': 12, 'G': 32, 'Q': 52, '-': 72,
-              '7': 14, 'H': 34, 'R': 54, '_': 74,
-              '8': 16, 'I': 36, 'S': 56, '/': 76,
-              '9': 18, 'J': 38, 'T': 58, ' ': 78}
+_OWEN_NAME = {'0': 0,  '1': 2,  '2': 4,  '3': 6,  '4': 8,
+              '5': 10, '6': 12, '7': 14, '8': 16, '9': 18,
+              'A': 20, 'B': 22, 'C': 24, 'D': 26, 'E': 28,
+              'F': 30, 'G': 32, 'H': 34, 'I': 36, 'J': 38,
+              'K': 40, 'L': 42, 'M': 44, 'N': 46, 'O': 48,
+              'P': 50, 'Q': 52, 'R': 54, 'S': 56, 'T': 58,
+              'U': 60, 'V': 62, 'W': 64, 'X': 66, 'Y': 68,
+              'Z': 70, '-': 72, '_': 74, '/': 76, ' ': 78}
 
 _OWEN_TYPE = {'F32': {'pack': lambda value: pack('>f', value)[0:4],  'unpack': lambda value: unpack('>f', value[0:4])[0]},
               'F24': {'pack': lambda value: pack('>f', value)[0:3],  'unpack': lambda value: unpack('>f', value[0:3] + b'\x00')[0]},
@@ -71,7 +69,7 @@ class Owen(object):
         """ Преобразование пакета из бинарного вида в строковый """
 
         chars = [chr(71 + (num>>4 & 0xF)) + chr(71 + (num & 0xF)) for num in buff]
-        return '#' + "".join(chars) + '\r'
+        return ('#' + "".join(chars) + '\r').encode("ascii")
 
     def _ascii2bytes(self, buff):
         """ Преобразование пакета из строкового вида в бинарный """
@@ -111,11 +109,9 @@ class Owen(object):
         _logger.debug("Send param: address=%d, flag=%d, size=%d, cmd=%04X, "
                       "data=%s, crc=%04X", self.unit, flag, len(data), cmd, data, crc)
 
-        ret = self._bytes2ascii(packet + [crc>>8 & 0xFF, crc & 0xFF])
+        return self._bytes2ascii(packet + [crc>>8 & 0xFF, crc & 0xFF])
 
-        return ret.encode("ascii")
-
-    def _parse_response(self, answer, name=None):
+    def _parse_response(self, answer, name):
         """ Расшифровка прочитанного пакета """
 
         answer = answer.decode("ascii")
@@ -154,7 +150,7 @@ class Owen(object):
         answer = self._get_ping_pong(packet)
         _logger.debug("Recv frame: %r, size=%d", answer, len(answer))
 
-        return answer==packet or self._parse_response(answer, name)
+        return answer == packet or self._parse_response(answer, name)
 
     def _get_ping_pong(self, packet):
         """ Обмен данными с устройством через порт """

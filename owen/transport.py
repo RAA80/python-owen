@@ -21,6 +21,9 @@ class BaseTransport(object):
     """ Базовый класс транспорта для взаимодействия с устройством """
 
     def __init__(self, *args, **kwargs):
+        self.device = None
+        self.unit = None
+
         self._socket = None
 
     def __repr__(self):
@@ -30,47 +33,54 @@ class BaseTransport(object):
         self.close()
 
     def connect(self):
+        """ Подключение к удаленному устройству """
+
         raise NotImplementedError()
 
     def close(self):
+        """ Закрытие соединения """
+
         if self._socket:
             self._socket.close()
         self._socket = None
 
     def get_param(self, name, index=None):
+        """ Чтение данных из устройства """
+
         raise NotImplementedError()
 
     def set_param(self, name, index=None, value=None):
+        """ Запись данных в устройство """
+
         raise NotImplementedError()
 
-    def check_param(self, dev, name, index, value=None):
+    def check_param(self, proto, name, index, value=None):
+        """ Проверка введенных данных """
+
+        dev = self.device[proto][name]
+
         if not index:
             if None in dev['index']: index = None
             elif 0 in dev['index']:  index = 0
 
         if index not in dev['index']:
-            raise ValueError("{}: Parameter '{}' not supported index {}".
-                             format(type(self).__name__, name, index))
-        if value is not None:
-            if value < dev['min'] or value > dev['max']:
-                raise ValueError("{}: Parameter '{}' out of range ({}, {}) value {}".
-                                 format(type(self).__name__, name, dev['min'],
-                                        dev['max'], value))
-        return index
+            raise ValueError("Parameter '{}' not in supported indexes {} index {}".
+                             format(name, tuple(dev["index"]), index))
+        if (value is not None) and (value < dev['min'] or value > dev['max']):
+            raise ValueError("Parameter '{}' out of range ({}, {}) value {}".
+                             format(name, dev['min'], dev['max'], value))
+        return dev, index
 
 
 class OwenSerialTransport(BaseTransport):
     """ Класс транспорта для взаимодействия с устройством по протоколу ОВЕН """
 
-    device = None
-    unit = None
     addr_len_8 = True
 
     def __init__(self, *args, **kwargs):
         super(OwenSerialTransport, self).__init__(args, kwargs)
 
         self._owen = None
-        self._socket = None
         self._args = args
         self._kwargs = kwargs
 
@@ -89,23 +99,16 @@ class OwenSerialTransport(BaseTransport):
         return self._socket is not None
 
     def get_param(self, name, index=None):
-        dev = self.device['Owen'][name]
-        index = self.check_param(dev, name, index)
-
+        dev, index = self.check_param('Owen', name, index)
         return self._owen.get_param(dev['type'], name, index)
 
     def set_param(self, name, index=None, value=None):
-        dev = self.device['Owen'][name]
-        index = self.check_param(dev, name, index, value)
-
+        dev, index = self.check_param('Owen', name, index, value)
         return self._owen.set_param(dev['type'], name, index, value)
 
 
 class OwenModbusTransport(BaseTransport):
     """ Класс транспорта для взаимодействия с устройством по протоколу Modbus """
-
-    device = None
-    unit = None
 
     def __init__(self, *args, **kwargs):
         super(OwenModbusTransport, self).__init__(args, kwargs)
@@ -130,8 +133,6 @@ class OwenModbusTransport(BaseTransport):
             return True
 
     def _get(self, dev, name, index):
-        index = self.check_param(dev, name, index)
-
         if dev['type'] == "STR": count = 4
         elif dev['type'] in ["I32", "U32", "F32"]: count = 2
         else: count = 1
@@ -155,11 +156,11 @@ class OwenModbusTransport(BaseTransport):
             elif dev['type'] == "STR": return decoder.decode_string(8)
 
     def get_param(self, name, index=None):
-        dev = self.device['Modbus'][name]
+        dev, index = self.check_param('Modbus', name, index)
 
         if dev['dp']:
-            _dev = self.device['Modbus'][dev['dp']]
-            dp = self._get(_dev, dev['dp'], index)
+            dp_dev = self.device['Modbus'][dev['dp']]
+            dp = self._get(dp_dev, dev['dp'], index)
             ret = self._get(dev, name, index)/10.0**dp
         else:
             ret = self._get(dev, name, index)
@@ -168,15 +169,13 @@ class OwenModbusTransport(BaseTransport):
         return ret if not prec else ret/10.0**prec
 
     def set_param(self, name, index=None, value=None):
-        dev = self.device['Modbus'][name]
-
-        index = self.check_param(dev, name, index, value)
+        dev, index = self.check_param('Modbus', name, index, value)
 
         if dev['dp']:
-            _dev = self.device['Modbus'][dev['dp']]
-            dp = self._get(_dev, dev['dp'], index)
+            dp_dev = self.device['Modbus'][dev['dp']]
+            dp = self._get(dp_dev, dev['dp'], index)
             value *= 10.0**dp
-            sleep(0.05)     # ???
+            sleep(0.05)     # Без паузы иногда возникают ошибки
 
         prec = dev['precision']
         value = value if not prec else value * 10.0**prec

@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from serial import Serial
 from owen.protocol import Owen
 
 
@@ -31,8 +30,7 @@ class TestOwenProtocol(unittest.TestCase):
     ''' This is the unittest for Owen protocol '''
 
     def setUp(self):
-        client = Serial(port=None)
-        self.trm = TRM(client=client, unit=1)
+        self.trm = TRM(client=None, unit=1)
 
     def tearDown(self):
         del self.trm
@@ -76,14 +74,14 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual(233, self.trm._name2hash("INIT"))
 
     def test_bytes2ascii(self):
-        self.assertEqual("#GHHGHUTIKGJI\r", self.trm._bytes2ascii([1, 16, 30, 210, 64, 50]))
-        self.assertEqual("#GHGHHUTIGGJKGK\r", self.trm._bytes2ascii([1, 1, 30, 210, 0, 52, 4]))
-        self.assertEqual("#GHHISOOGGGGGQSUR\r", self.trm._bytes2ascii([1, 18, 200, 128, 0, 0, 172, 235]))
-        self.assertEqual("#GHGJSOOGGGGGGGUQRK\r", self.trm._bytes2ascii([1, 3, 200, 128, 0, 0, 0, 234, 180]))
-        self.assertEqual("#GHHIPHGNGGGGKKPV\r", self.trm._bytes2ascii([1, 18, 145, 7, 0, 0, 68, 159]))
-        self.assertEqual("#GHGLPHGNKHSOGGGGGGJOMV\r", self.trm._bytes2ascii([1, 5, 145, 7, 65, 200, 0, 0, 0, 56, 111]))
-        self.assertEqual("#GHHGHIGJUIMK\r", self.trm._bytes2ascii([1, 16, 18, 3, 226, 100]))
-        self.assertEqual("#GHGHHIGJGGIHHO\r", self.trm._bytes2ascii([1, 1, 18, 3, 0, 33, 24]))
+        self.assertEqual(b"#GHHGHUTIKGJI\r", self.trm._bytes2ascii([1, 16, 30, 210, 64, 50]))
+        self.assertEqual(b"#GHGHHUTIGGJKGK\r", self.trm._bytes2ascii([1, 1, 30, 210, 0, 52, 4]))
+        self.assertEqual(b"#GHHISOOGGGGGQSUR\r", self.trm._bytes2ascii([1, 18, 200, 128, 0, 0, 172, 235]))
+        self.assertEqual(b"#GHGJSOOGGGGGGGUQRK\r", self.trm._bytes2ascii([1, 3, 200, 128, 0, 0, 0, 234, 180]))
+        self.assertEqual(b"#GHHIPHGNGGGGKKPV\r", self.trm._bytes2ascii([1, 18, 145, 7, 0, 0, 68, 159]))
+        self.assertEqual(b"#GHGLPHGNKHSOGGGGGGJOMV\r", self.trm._bytes2ascii([1, 5, 145, 7, 65, 200, 0, 0, 0, 56, 111]))
+        self.assertEqual(b"#GHHGHIGJUIMK\r", self.trm._bytes2ascii([1, 16, 18, 3, 226, 100]))
+        self.assertEqual(b"#GHGHHIGJGGIHHO\r", self.trm._bytes2ascii([1, 1, 18, 3, 0, 33, 24]))
 
     def test_ascii2bytes(self):
         self.assertEqual([1, 1, 30, 210, 0, 52, 4], self.trm._ascii2bytes("#GHGHHUTIGGJKGK\r"))
@@ -104,7 +102,7 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual([12], self.trm._pack_value("U8", 12))
         self.assertEqual([244], self.trm._pack_value("I8", -12))
         self.assertEqual([84, 83, 69, 84], self.trm._pack_value("STR", b"TEST"))
-        self.assertIsNone(self.trm._pack_value("U8", None))
+        self.assertIsNone(self.trm._pack_value("U8", None))                 # if empty buffer
 
     def test_unpack_value(self):
         self.assertEqual(123.45677947998047, self.trm._unpack_value("F32", bytearray([66, 246, 233, 223])))
@@ -115,7 +113,8 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual(12, self.trm._unpack_value("U8", bytearray([12])))
         self.assertEqual(-12, self.trm._unpack_value("I8", bytearray([244])))
         self.assertEqual(b"TEST", self.trm._unpack_value("STR", bytearray([84, 83, 69, 84])))
-        self.assertIsNone(self.trm._unpack_value("U8", None))
+        self.assertIsNone(self.trm._unpack_value("U8", None))               # if empty buffer
+        self.assertIsNone(self.trm._unpack_value("F32", bytearray([253])))  # if error code
 
     def test_make_packet(self):
         self.assertEqual(b"#GHHGHUTIKGJI\r", self.trm._make_packet(1, 7890, None, []))
@@ -133,6 +132,9 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual(bytearray([52, 48, 48, 48, 46, 51, 48, 86]), self.trm._parse_response(b"#GHGOITLRJKJGJGJGIUJJJGLMUPPR\r", "VER"))
         self.assertEqual(bytearray([71, 180, 101]), self.trm._parse_response(b"#GHGJGIJJKNRKMLLNJK\r", "N.ERR"))
         self.assertEqual(bytearray([100]), self.trm._parse_response(b"#GHGHJONIMKKIMP\r", "REST"))
+        self.assertIsNone(self.trm._parse_response(b"", "A.LEn"))                           # if empty message
+        self.assertIsNone(self.trm._parse_response(b"#GHGJGIJJKNNNRQPUSV\r", "CTL"))        # if error code
+        self.assertIsNone(self.trm._parse_response(b"#GHGLUHNTSJKNUMGGGGLPTD\r", "SL.L"))   # if checksumm mismatch
 
     def test_get_param(self):
         self.assertEqual(b'\xd2\xd0\xcc201', self.trm.get_param(frmt="STR", name="DEV"))
@@ -144,11 +146,11 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual((71, 46181), self.trm.get_param(frmt="U24", name="N.ERR"))
 
     def test_set_param(self):
-        self.assertEqual(True, self.trm.set_param(frmt="U8", name="A.LEN", index=None, value=0))
-        self.assertEqual(True, self.trm.set_param(frmt="U8", name="CMP", index=0, value=1))
-        self.assertEqual(True, self.trm.set_param(frmt="U16", name="ADDR", index=None, value=1))
-        self.assertEqual(True, self.trm.set_param(frmt="F24", name="R.OUT", index=None, value=0.0))
-        self.assertEqual(True, self.trm.set_param(frmt="F24", name="SL.H", index=0, value=750.0))
+        self.assertTrue(self.trm.set_param(frmt="U8", name="A.LEN", index=None, value=0))
+        self.assertTrue(self.trm.set_param(frmt="U8", name="CMP", index=0, value=1))
+        self.assertTrue(self.trm.set_param(frmt="U16", name="ADDR", index=None, value=1))
+        self.assertTrue(self.trm.set_param(frmt="F24", name="R.OUT", index=None, value=0.0))
+        self.assertTrue(self.trm.set_param(frmt="F24", name="SL.H", index=0, value=750.0))
 
 
 if __name__ == "__main__":
