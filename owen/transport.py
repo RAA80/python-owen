@@ -7,7 +7,6 @@ from serial import Serial, SerialException
 from pymodbus.client.sync import ModbusSerialClient
 from pymodbus.payload import BinaryPayloadDecoder, BinaryPayloadBuilder
 from pymodbus.constants import Endian
-from pymodbus.version import version
 from pymodbus.exceptions import ModbusException
 from pymodbus.pdu import ExceptionResponse
 
@@ -20,7 +19,7 @@ _logger.addHandler(logging.NullHandler())
 class BaseTransport(object):
     """ Базовый класс транспорта для взаимодействия с устройством """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         self.device = None
         self.unit = None
 
@@ -60,14 +59,13 @@ class BaseTransport(object):
         dev = self.device[proto][name]
 
         if not index:
-            if None in dev['index']: index = None
-            elif 0 in dev['index']:  index = 0
+            index = None if None in dev['index'] else 0
 
         if index not in dev['index']:
-            raise ValueError("Parameter '{}' not in supported indexes {} index {}".
+            raise ValueError("Parameter '{}' not in supported indexes {} index '{}'".
                              format(name, tuple(dev["index"]), index))
         if (value is not None) and (value < dev['min'] or value > dev['max']):
-            raise ValueError("Parameter '{}' out of range ({}, {}) value {}".
+            raise ValueError("Parameter '{}' out of range ({}, {}) value '{}'".
                              format(name, dev['min'], dev['max'], value))
         return dev, index
 
@@ -78,7 +76,7 @@ class OwenSerialTransport(BaseTransport):
     addr_len_8 = True
 
     def __init__(self, *args, **kwargs):
-        super(OwenSerialTransport, self).__init__(args, kwargs)
+        super(OwenSerialTransport, self).__init__()
 
         self._owen = None
         self._args = args
@@ -111,7 +109,7 @@ class OwenModbusTransport(BaseTransport):
     """ Класс транспорта для взаимодействия с устройством по протоколу Modbus """
 
     def __init__(self, *args, **kwargs):
-        super(OwenModbusTransport, self).__init__(args, kwargs)
+        super(OwenModbusTransport, self).__init__()
 
         socket = kwargs.get("socket", None)
         if socket is not None:
@@ -132,22 +130,15 @@ class OwenModbusTransport(BaseTransport):
         else:
             return True
 
-    def _get(self, dev, name, index):
-        if dev['type'] == "STR": count = 4
-        elif dev['type'] in ["I32", "U32", "F32"]: count = 2
-        else: count = 1
-
+    def _read(self, dev, name, index):
+        count = {"U16": 1, "I16": 1, "U32": 2, "I32": 2, "F32": 2, "STR": 4
+                }[dev['type']]
         result = self._socket.read_holding_registers(address=dev['index'][index],
                                                      count=count,
                                                      unit=self.unit)
         if self._error_check(name, result):
-            if int(version.short()[0]) > 1:
-                decoder = BinaryPayloadDecoder.fromRegisters(registers=result.registers,
-                                                             byteorder=Endian.Big,
-                                                             wordorder=Endian.Little)
-            else:
-                decoder = BinaryPayloadDecoder.fromRegisters(registers=result.registers,
-                                                             endian=Endian.Big)
+            decoder = BinaryPayloadDecoder.fromRegisters(result.registers, Endian.Big)
+
             if dev['type'] == "U16":   return decoder.decode_16bit_uint()
             elif dev['type'] == "I16": return decoder.decode_16bit_int()
             elif dev['type'] == "U32": return decoder.decode_32bit_uint()
@@ -158,33 +149,28 @@ class OwenModbusTransport(BaseTransport):
     def get_param(self, name, index=None):
         dev, index = self.check_param('Modbus', name, index)
 
+        result = self._read(dev, name, index)
         if dev['dp']:
             dp_dev = self.device['Modbus'][dev['dp']]
-            dp = self._get(dp_dev, dev['dp'], index)
-            ret = self._get(dev, name, index)/10.0**dp
-        else:
-            ret = self._get(dev, name, index)
+            dp = self._read(dp_dev, dev['dp'], index)
+            result /= 10.0**dp
 
         prec = dev['precision']
-        return ret if not prec else ret/10.0**prec
+        return result if not prec else result / 10.0**prec
 
     def set_param(self, name, index=None, value=None):
         dev, index = self.check_param('Modbus', name, index, value)
 
         if dev['dp']:
             dp_dev = self.device['Modbus'][dev['dp']]
-            dp = self._get(dp_dev, dev['dp'], index)
+            dp = self._read(dp_dev, dev['dp'], index)
             value *= 10.0**dp
             sleep(0.05)     # Без паузы иногда возникают ошибки
 
         prec = dev['precision']
         value = value if not prec else value * 10.0**prec
 
-        if int(version.short()[0]) > 1:
-            builder = BinaryPayloadBuilder(byteorder=Endian.Big,
-                                           wordorder=Endian.Little)
-        else:
-            builder = BinaryPayloadBuilder(endian=Endian.Big)
+        builder = BinaryPayloadBuilder(None, Endian.Big)
 
         if dev['type'] == "I16":   builder.add_16bit_int(int(value))
         elif dev['type'] == "U16": builder.add_16bit_uint(int(value))
