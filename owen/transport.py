@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from time import sleep
+from operator import truediv, mul
 from serial import Serial, SerialException
 from pymodbus.client.sync import ModbusSerialClient
 from pymodbus.payload import BinaryPayloadDecoder, BinaryPayloadBuilder
@@ -111,11 +111,7 @@ class OwenModbusTransport(BaseTransport):
     def __init__(self, *args, **kwargs):
         super(OwenModbusTransport, self).__init__()
 
-        socket = kwargs.get("socket", None)
-        if socket is not None:
-            self._socket = socket
-        else:
-            self._socket = ModbusSerialClient(*args, **kwargs)
+        self._socket = ModbusSerialClient(*args, **kwargs)
 
     def connect(self):
         return self._socket.connect()
@@ -146,29 +142,23 @@ class OwenModbusTransport(BaseTransport):
             elif dev['type'] == "F32": return decoder.decode_32bit_float()
             elif dev['type'] == "STR": return decoder.decode_string(8)
 
-    def get_param(self, name, index=None):
-        dev, index = self.check_param('Modbus', name, index)
-
-        result = self._read(dev, name, index)
+    def _modify_value(self, func, dev, index, value):
         if dev['dp']:
             dp_dev = self.device['Modbus'][dev['dp']]
             dp = self._read(dp_dev, dev['dp'], index)
-            result /= 10.0**dp
+            value = func(value, 10.0**dp)
 
         prec = dev['precision']
-        return result if not prec else result / 10.0**prec
+        return func(value, 10.0**prec) if prec else value
+
+    def get_param(self, name, index=None):
+        dev, index = self.check_param('Modbus', name, index)
+        value = self._read(dev, name, index)
+        return self._modify_value(truediv, dev, index, value)
 
     def set_param(self, name, index=None, value=None):
         dev, index = self.check_param('Modbus', name, index, value)
-
-        if dev['dp']:
-            dp_dev = self.device['Modbus'][dev['dp']]
-            dp = self._read(dp_dev, dev['dp'], index)
-            value *= 10.0**dp
-            sleep(0.05)     # Без паузы иногда возникают ошибки
-
-        prec = dev['precision']
-        value = value if not prec else value * 10.0**prec
+        value = self._modify_value(mul, dev, index, value)
 
         builder = BinaryPayloadBuilder(None, Endian.Big)
 
