@@ -18,14 +18,14 @@ _OWEN_NAME = {'0': 0,  '1': 2,  '2': 4,  '3': 6,  '4': 8,
               'U': 60, 'V': 62, 'W': 64, 'X': 66, 'Y': 68,
               'Z': 70, '-': 72, '_': 74, '/': 76, ' ': 78}
 
-_OWEN_TYPE = {'F32': {'pack': lambda value: pack('>f', value)[0:4],  'unpack': lambda value: unpack('>f', value[0:4])[0]},
-              'F24': {'pack': lambda value: pack('>f', value)[0:3],  'unpack': lambda value: unpack('>f', value[0:3] + b'\x00')[0]},
-              'U16': {'pack': lambda value: pack('>H', value)[0:2],  'unpack': lambda value: unpack('>H', value[0:2])[0]},
-              'I16': {'pack': lambda value: pack('>h', value)[0:2],  'unpack': lambda value: unpack('>h', value[0:2])[0]},
-              'U8':  {'pack': lambda value: pack('>B', value)[0:1],  'unpack': lambda value: unpack('>B', value[0:1])[0]},
-              'I8':  {'pack': lambda value: pack('>b', value)[0:1],  'unpack': lambda value: unpack('>b', value[0:1])[0]},
-              'U24': {'pack': lambda value: pack('>BH', value)[0:3], 'unpack': lambda value: unpack('>BH', value[0:3])},     # для N.err
-              'STR': {'pack': lambda value: value[::-1],             'unpack': lambda value: value[::-1]}}
+_OWEN_TYPE = {'F32': {'pack': lambda value: pack('>f', value)[:4],  'unpack': lambda value: unpack('>f', value[:4])[0]},
+              'F24': {'pack': lambda value: pack('>f', value)[:3],  'unpack': lambda value: unpack('>f', value[:3] + b'\x00')[0]},
+              'U16': {'pack': lambda value: pack('>H', value)[:2],  'unpack': lambda value: unpack('>H', value[:2])[0]},
+              'I16': {'pack': lambda value: pack('>h', value)[:2],  'unpack': lambda value: unpack('>h', value[:2])[0]},
+              'U8':  {'pack': lambda value: pack('>B', value)[:1],  'unpack': lambda value: unpack('>B', value[:1])[0]},
+              'I8':  {'pack': lambda value: pack('>b', value)[:1],  'unpack': lambda value: unpack('>b', value[:1])[0]},
+              'U24': {'pack': lambda value: pack('>BH', value)[:3], 'unpack': lambda value: unpack('>BH', value[:3])},     # для N.err
+              'STR': {'pack': lambda value: value[::-1],            'unpack': lambda value: value[::-1]}}
 
 
 class Owen(object):
@@ -131,8 +131,8 @@ class Owen(object):
         _logger.debug("Recv param: address=%d, flag=%d, size=%d, cmd=%04X, "
                       "data=%s, crc=%04X", address, flag, size, cmd, data, crc)
 
-        if self._owen_crc16(frame[0:-2]) != crc:
-            _logger.error("OwenProtocolError: Checksumm mismatch")
+        if self._owen_crc16(frame[:-2]) != crc:
+            _logger.error("OwenProtocolError: Checksum error")
             return None
         if name != "N.ERR" and cmd == 0x0233:
             _logger.error("OwenProtocolError: error=%02X, hash=%02X%02X", *data)

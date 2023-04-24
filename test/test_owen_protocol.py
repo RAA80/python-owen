@@ -134,7 +134,7 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual(bytearray([100]), self.trm._parse_response(b"#GHGHJONIMKKIMP\r", "REST"))
         self.assertIsNone(self.trm._parse_response(b"", "A.LEn"))                           # if empty message
         self.assertIsNone(self.trm._parse_response(b"#GHGJGIJJKNNNRQPUSV\r", "CTL"))        # if error code
-        self.assertIsNone(self.trm._parse_response(b"#GHGLUHNTSJKNUMGGGGLPTD\r", "SL.L"))   # if checksumm mismatch
+        self.assertIsNone(self.trm._parse_response(b"#GHGLUHNTSJKNUMGGGGLPTD\r", "SL.L"))   # if checksum error
 
     def test_get_param(self):
         self.assertEqual(b'\xd2\xd0\xcc201', self.trm.get_param(frmt="STR", name="DEV"))
