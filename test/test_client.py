@@ -8,14 +8,13 @@ except ImportError:
     from mock import patch
 
 from owen.client import OwenSerialClient, OwenModbusClient
-from owen.protocol import Owen
 
 
-class TRM(Owen):
-    def __init__(self, client, unit):
-        super(TRM, self).__init__(client, unit)
+class FakeOwenSerialClient(OwenSerialClient):
+    def __init__(self, transport, device, unit, addr_len_8):
+        super(FakeOwenSerialClient, self).__init__(transport, device, unit, addr_len_8)
 
-    def _get_ping_pong(self, packet):
+    def bus_exchange(self, packet):
         return {b'#GHHGTMOHHRTO\r': b'#GHGMTMOHJHJGJISSTGTIPLKK\r',         # чтение параметра "DEV" тип "STR"
                 b'#GHHGHUTIKGJI\r': b'#GHGHHUTIGGJKGK\r',                   # чтение параметра "A.LEN" тип "U8" без индекса
                 b'#GHHIRJURGGGGHQIV\r': b'#GHGJRJURGHGGGGQROU\r',           # чтение параметра "DP" тип "U8" с индексом
@@ -38,19 +37,39 @@ class TestClient(unittest.TestCase):
     @patch("serial.Serial")
     def test_OwenSerialClient(self, mock_serial):
         transport = mock_serial
-        device = {'Owen': {'A.LEN': {'type': 'U8', 'index': {None: None,}, 'min': 0, 'max': 1}}}
+        device = {'Owen': {'A.LEN': {'type': 'U8',  'index': {None: None,}, 'min': 0,     'max': 1},
+                           'DEV':   {'type': 'STR', 'index': {None: None,}, 'min': "",    'max': ""},
+                           'DP':    {'type': 'U8',  'index': {0: 0,},       'min': 0,     'max': 3},
+                           'ADDR':  {'type': 'U16', 'index': {None: None,}, 'min': 0,     'max': 2047},
+                           'PV':    {'type': 'F24', 'index': {None: None,}, 'min': -1999, 'max': 9999},
+                           'SL.H':  {'type': 'F24', 'index': {0: 0,},       'min': -1999, 'max': 9999},
+                           'N.ERR': {'type': 'U24', 'index': {None: None,}, 'min': 0,     'max': 255},
+                           'CMP':   {'type': 'U8',  'index': {0: 0,},       'min': 0,     'max': 4},
+                           'R.OUT': {'type': 'F24', 'index': {None: None,}, 'min': 0,     'max': 1},
+                          }
+                 }
         unit = 1
         addr_len_8 = True
 
-        client = OwenSerialClient(transport, device, unit, addr_len_8)
-        client._owen = TRM(client=transport, unit=unit)
+        client = FakeOwenSerialClient(transport, device, unit, addr_len_8)
 
         # set correct params
         self.assertEqual(0, client.get_param(name="A.LEN", index=None))
+        self.assertEqual(b'\xd2\xd0\xcc201', client.get_param(name="DEV", index=None))
+        self.assertEqual(1, client.get_param(name="DP", index=0))
+        self.assertEqual(1, client.get_param(name="ADDR", index=None))
+        self.assertEqual(81.578125, client.get_param(name="PV", index=0))
+        self.assertEqual(750.0, client.get_param(name="SL.H", index=0))
+        self.assertEqual((71, 46181), client.get_param(name="N.ERR", index=None))
         # set wrong index
         self.assertRaises(ValueError, lambda: client.get_param(name="A.LEN", index=2))
+
         # set correct params
         self.assertTrue(client.set_param(name="A.LEN", index=None, value=0))
+        self.assertTrue(client.set_param(name="CMP", index=0, value=1))
+        self.assertTrue(client.set_param(name="ADDR", index=None, value=1))
+        self.assertTrue(client.set_param(name="R.OUT", index=None, value=0.0))
+        self.assertTrue(client.set_param(name="SL.H", index=0, value=750.0))
         # set wrong index
         self.assertRaises(ValueError, lambda: client.set_param(name="A.LEN", index=2, value=0))
         # set wrong value

@@ -34,13 +34,20 @@ if __name__ == "__main__":
     print(trm)
 
     ''' !!!
-        Если параметр не использует индекс, т.е. index=None,
-        либо прибор одноканальный и у параметра index=0,
-        то индекс указывать необязательно
+        Все названия параметров ОВЕН должны быть в верхнем регистре
+        Например: ADDR, A.LEN, BPS
 
         Полная форма запроса:
-        trm.get_param(name="A.LEn", index=None)
-        trm.set_param(name="A.LEn", index=None, value=0)
+        get_param(name="ADDR", index=None)
+        get_param(name="SP", index=0)
+        set_param(name="ADDR", index=None, value=1)
+        set_param(name="SP", index=0, value=20.0)
+
+        Для многоканальных приборов (например ТРМ202) и протокола Modbus названия
+        параметров (например IN.T1, IN.T2) для совместимости с протоколом ОВЕН
+        преобразуются в:
+        IN.T1 --> name="IN.T", index=0
+        IN.T2 --> name="IN.T", index=1
     '''
 
     for key in TRM201['Owen']:

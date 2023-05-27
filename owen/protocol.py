@@ -31,69 +31,67 @@ _OWEN_TYPE = {'F32': {'pack': lambda value: pack('>f', value)[:4],  'unpack': la
 class Owen(object):
     ''' Класс, описывающий протокол ОВЕН '''
 
-    addr_len_8 = True    # длина адреса в битах: True=8, False=11
-
-    def __init__(self, client, unit):
-        self.client = client
+    def __init__(self, unit, addr_len_8=True):
         self.unit = unit
+        self.addr_len_8 = addr_len_8
 
     def __repr__(self):
-        return "Owen(client={}, unit={})".format(self.client, self.unit)
+        return "Owen(unit={}, addr_len={}".format(self.unit, self.addr_len_8)
 
-    def _fast_calc(self, value, crc, bits):
+    def fast_calc(self, value, crc, bits):
         """ Вычисление значения полинома """
 
         return reduce(lambda crc, i: crc<<1 & 0xFFFF ^ (0x8F57
                       if (value<<i ^ crc>>8) & 0x80 else 0), range(bits), crc)
 
-    def _owen_crc16(self, packet):
+    def owen_crc16(self, packet):
         """ Вычисление контрольной суммы """
 
-        return reduce(lambda crc, val: self._fast_calc(val, crc, 8), packet, 0)
+        return reduce(lambda crc, val: self.fast_calc(val, crc, 8), packet, 0)
 
-    def _owen_hash(self, packet):
+    def owen_hash(self, packet):
         """ Вычисление hash-функции """
 
-        return reduce(lambda crc, val: self._fast_calc(val<<1, crc, 7), packet, 0)
+        return reduce(lambda crc, val: self.fast_calc(val<<1, crc, 7), packet, 0)
 
-    def _name2hash(self, name):
+    def name2hash(self, name):
         """ Преобразование локального идентификатора в двоичный вид """
 
         owen_name = reduce(lambda x, ch: x[:-1] + [x[-1]+1] if ch == '.'
                            else x + [_OWEN_NAME[ch]], name.upper(), [])
         owen_name += [_OWEN_NAME[' ']] * (4 - len(owen_name))
 
-        return self._owen_hash(owen_name)
+        return self.owen_hash(owen_name)
 
-    def _bytes2ascii(self, buff):
+    def encode_frame(self, frame):
         """ Преобразование пакета из бинарного вида в строковый """
 
-        chars = [chr(71 + (num>>4 & 0xF)) + chr(71 + (num & 0xF)) for num in buff]
+        chars = [chr(71 + (num>>4 & 0xF)) + chr(71 + (num & 0xF)) for num in frame]
         return ('#' + "".join(chars) + '\r').encode("ascii")
 
-    def _ascii2bytes(self, buff):
+    def decode_frame(self, frame):
         """ Преобразование пакета из строкового вида в бинарный """
 
         return [ord(i)-71 << 4 | ord(j)-71 & 0xF
-                for i,j in zip(*[iter(buff[1:-1])]*2)]
+                for i,j in zip(*[iter(frame[1:-1])]*2)]
 
-    def _pack_value(self, frmt, value):
+    def pack_value(self, frmt, value):
         """ Упаковка данных """
 
         if value is not None:
             return list(bytearray(_OWEN_TYPE[frmt]['pack'](value)))
 
-    def _unpack_value(self, frmt, buff):
+    def unpack_value(self, frmt, value):
         """ Распаковка данных """
 
-        if buff:
+        if value:
             try:
-                return _OWEN_TYPE[frmt]['unpack'](buff)
+                return _OWEN_TYPE[frmt]['unpack'](value)
             except error:
-                errcode = _OWEN_TYPE['U8']['unpack'](buff)
+                errcode = _OWEN_TYPE['U8']['unpack'](value)
                 _logger.error("OwenProtocolError: error=%02X", errcode)
 
-    def _make_packet(self, flag, cmd, index, data):
+    def make_packet(self, flag, name, index, data=None):
         """ Формирование пакета для записи """
 
         addr0, addr1 = (self.unit & 0xFF, 0) if self.addr_len_8 \
@@ -103,23 +101,29 @@ class Owen(object):
         if index is not None:
             data.extend([index>>8 & 0xFF, index & 0xFF])
 
-        packet = [addr0, addr1 + (flag << 4) + len(data), cmd>>8 & 0xFF, cmd & 0xFF] + data
-        crc = self._owen_crc16(packet)
+        cmd = self.name2hash(name)
+        frame = [addr0, addr1 + (flag << 4) + len(data), cmd>>8 & 0xFF, cmd & 0xFF] + data
+        crc = self.owen_crc16(frame)
+        packet = self.encode_frame(frame + [crc>>8 & 0xFF, crc & 0xFF])
 
         _logger.debug("Send param: address=%d, flag=%d, size=%d, cmd=%04X, "
                       "data=%s, crc=%04X", self.unit, flag, len(data), cmd, data, crc)
+        _logger.debug("Send frame: %r, size=%d", packet, len(packet))
 
-        return self._bytes2ascii(packet + [crc>>8 & 0xFF, crc & 0xFF])
+        return packet
 
-    def _parse_response(self, answer, name):
+    def parse_response(self, packet, answer, name):
         """ Расшифровка прочитанного пакета """
 
+        _logger.debug("Recv frame: %r, size=%d", answer, len(answer))
+
+        packet = packet.decode("ascii")
         answer = answer.decode("ascii")
         if not answer or answer[0] != "#" or answer[-1] != "\r":
             _logger.error("OwenProtocolError: Wrong readed message format")
             return None
 
-        frame = self._ascii2bytes(answer)
+        frame = self.decode_frame(answer)
 
         address = frame[0] if self.addr_len_8 else frame[0]<<3 | frame[1]>>5
         flag = frame[1]>>4 & 1
@@ -131,47 +135,14 @@ class Owen(object):
         _logger.debug("Recv param: address=%d, flag=%d, size=%d, cmd=%04X, "
                       "data=%s, crc=%04X", address, flag, size, cmd, data, crc)
 
-        if self._owen_crc16(frame[:-2]) != crc:
+        if self.owen_crc16(frame[:-2]) != crc:
             _logger.error("OwenProtocolError: Checksum error")
             return None
         if name != "N.ERR" and cmd == 0x0233:
             _logger.error("OwenProtocolError: error=%02X, hash=%02X%02X", *data)
             return None
 
-        return bytearray(data)
-
-    def _data_exchange(self, flag, name, index, data=None):
-        """ Подготовка данных для записи """
-
-        cmd = self._name2hash(name)
-        packet = self._make_packet(flag, cmd, index, data)
-
-        _logger.debug("Send frame: %r, size=%d", packet, len(packet))
-        answer = self._get_ping_pong(packet)
-        _logger.debug("Recv frame: %r, size=%d", answer, len(answer))
-
-        return answer == packet or self._parse_response(answer, name)
-
-    def _get_ping_pong(self, packet):
-        """ Обмен данными с устройством через порт """
-
-        self.client.reset_input_buffer()
-        self.client.reset_output_buffer()
-
-        self.client.write(packet)
-        return self.client.read_until(b'\r')
-
-    def get_param(self, frmt, name, index=None):
-        """ Чтение данных из устройства """
-
-        data = self._data_exchange(1, name, index)
-        return self._unpack_value(frmt, data)
-
-    def set_param(self, frmt, name, index=None, value=None):
-        """ Запись данных в устройство """
-
-        data = self._pack_value(frmt, value) or []
-        return self._data_exchange(0, name, index, data)
+        return answer == packet or bytearray(data)
 
 
 __all__ = [ "Owen" ]

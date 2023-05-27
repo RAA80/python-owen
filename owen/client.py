@@ -25,7 +25,7 @@ class BaseClient(object):
         self.connect()
 
     def __repr__(self):
-        return "{}({}, {})".format(type(self).__name__, self.socket, self.unit)
+        return "{}(transport={}, unit={})".format(type(self).__name__, self.socket, self.unit)
 
     def __del__(self):
         self.close()
@@ -73,24 +73,34 @@ class OwenSerialClient(BaseClient):
     """ Класс клиента для взаимодействия с устройством по протоколу ОВЕН """
 
     def __init__(self, transport, device, unit, addr_len_8=True):
-        self.addr_len_8 = addr_len_8
-        self._owen = None
+        self._owen = Owen(unit, addr_len_8)     # длина адреса в битах: True=8, False=11
 
         super(OwenSerialClient, self).__init__(transport, device, unit)
 
     def connect(self):
-        if self.socket.is_open:
-            self._owen = Owen(self.socket, self.unit)
-            self._owen.addr_len_8 = self.addr_len_8
-            return True
+        return self.socket.is_open
+
+    def bus_exchange(self, packet):
+        self.socket.reset_input_buffer()
+        self.socket.reset_output_buffer()
+
+        self.socket.write(packet)
+        return self.socket.read_until(b'\r')
+
+    def send_message(self, flag, name, index, data=None):
+        packet = self._owen.make_packet(flag, name, index, data)
+        answer = self.bus_exchange(packet)
+        return self._owen.parse_response(packet, answer, name)
 
     def get_param(self, name, index=None):
         dev, index = self.check_param('Owen', name, index)
-        return self._owen.get_param(dev['type'], name, index)
+        result = self.send_message(1, name, index)
+        return self._owen.unpack_value(dev['type'], result)
 
     def set_param(self, name, index=None, value=None):
         dev, index = self.check_param('Owen', name, index, value)
-        return self._owen.set_param(dev['type'], name, index, value)
+        data = self._owen.pack_value(dev['type'], value) or []
+        return self.send_message(0, name, index, data)
 
 
 class OwenModbusClient(BaseClient):
@@ -120,13 +130,10 @@ class OwenModbusClient(BaseClient):
                                                     unit=self.unit)
         if self._error_check(name, result):
             decoder = BinaryPayloadDecoder.fromRegisters(result.registers, Endian.Big)
-
-            if dev['type'] == "U16":   return decoder.decode_16bit_uint()
-            elif dev['type'] == "I16": return decoder.decode_16bit_int()
-            elif dev['type'] == "U32": return decoder.decode_32bit_uint()
-            elif dev['type'] == "I32": return decoder.decode_32bit_int()
-            elif dev['type'] == "F32": return decoder.decode_32bit_float()
-            elif dev['type'] == "STR": return decoder.decode_string(8)
+            return {"U16": decoder.decode_16bit_uint,  "I16": decoder.decode_16bit_int,
+                    "U32": decoder.decode_32bit_uint,  "I32": decoder.decode_32bit_int,
+                    "F32": decoder.decode_32bit_float, "STR": lambda: decoder.decode_string(8)
+                   }[dev['type']]()
 
     def _modify_value(self, func, dev, index, value):
         if dev['dp']:
@@ -147,13 +154,13 @@ class OwenModbusClient(BaseClient):
         value = self._modify_value(mul, dev, index, value)
 
         builder = BinaryPayloadBuilder(None, Endian.Big)
-
-        if dev['type'] == "I16":   builder.add_16bit_int(int(value))
-        elif dev['type'] == "U16": builder.add_16bit_uint(int(value))
-        elif dev['type'] == "I32": builder.add_32bit_int(int(value))
-        elif dev['type'] == "U32": builder.add_32bit_uint(int(value))
-        elif dev['type'] == "F32": builder.add_32bit_float(float(value))
-        elif dev['type'] == "STR": builder.add_string(str(value))
+        {"U16": lambda value: builder.add_16bit_uint(int(value)),
+         "I16": lambda value: builder.add_16bit_int(int(value)),
+         "U32": lambda value: builder.add_32bit_uint(int(value)),
+         "I32": lambda value: builder.add_32bit_int(int(value)),
+         "F32": lambda value: builder.add_32bit_float(float(value)),
+         "STR": lambda value: builder.add_string(str(value))
+        }[dev['type']](value)
 
         result = self.socket.write_registers(address=dev['index'][index],
                                              values=builder.build(),

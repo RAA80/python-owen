@@ -5,7 +5,7 @@ from distutils.core import setup
 
 
 setup(name="python-owen",
-      version='0.2.0',
+      version='0.2.1',
       description='OWEN controllers module',
       url='https://github.com/RAA80/python-owen',
       author='Ryadno Alexey',
