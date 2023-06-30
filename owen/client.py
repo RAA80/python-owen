@@ -55,7 +55,7 @@ class BaseClient(object):
     def check_param(self, proto, name, index, value=None):
         """ Проверка введенных данных """
 
-        dev = self.device[proto][name]
+        dev = self.device[proto][name.upper()]
 
         if not index:
             index = None if None in dev['index'] else 0
@@ -63,7 +63,8 @@ class BaseClient(object):
         if index not in dev['index']:
             raise ValueError("Parameter '{}' not in supported indexes {} index '{}'".
                              format(name, tuple(dev["index"]), index))
-        if (value is not None) and (value < dev['min'] or value > dev['max']):
+        if value is not None and (dev['min'] is None and dev['max'] is None or
+           value < dev['min'] or value > dev['max']):
             raise ValueError("Parameter '{}' out of range ({}, {}) value '{}'".
                              format(name, dev['min'], dev['max'], value))
         return dev, index
@@ -90,7 +91,7 @@ class OwenSerialClient(BaseClient):
     def send_message(self, flag, name, index, data=None):
         packet = self._owen.make_packet(flag, name, index, data)
         answer = self.bus_exchange(packet)
-        return self._owen.parse_response(packet, answer, name)
+        return self._owen.parse_response(packet, answer)
 
     def get_param(self, name, index=None):
         dev, index = self.check_param('Owen', name, index)
@@ -99,7 +100,7 @@ class OwenSerialClient(BaseClient):
 
     def set_param(self, name, index=None, value=None):
         dev, index = self.check_param('Owen', name, index, value)
-        data = self._owen.pack_value(dev['type'], value) or []
+        data = self._owen.pack_value(dev['type'], value)
         return self.send_message(0, name, index, data)
 
 
@@ -112,23 +113,19 @@ class OwenModbusClient(BaseClient):
     def connect(self):
         return self.socket.connect()
 
-    def _error_check(self, name, retcode):
-        if not retcode:         # for python2 and pymodbus v1.3.0
-            _logger.error("Unit %d called '%s' with error: "
-                          "Modbus Error: [Input/Output] No Response received "
-                          "from the remote unit", self.unit, name)
-        elif isinstance(retcode, (ModbusException, ExceptionResponse)):
-            _logger.error("Unit %d called '%s' with error: %s", self.unit, name, retcode)
+    def _error_check(self, retcode):
+        if isinstance(retcode, (ModbusException, ExceptionResponse, type(None))):
+            _logger.error("Unit %d return %s", self.unit, retcode)
         else:
             return True
 
-    def _read(self, dev, name, index):
+    def _read(self, dev, index):
         count = {"U16": 1, "I16": 1, "U32": 2, "I32": 2, "F32": 2, "STR": 4
                 }[dev['type']]
         result = self.socket.read_holding_registers(address=dev['index'][index],
                                                     count=count,
                                                     unit=self.unit)
-        if self._error_check(name, result):
+        if self._error_check(result):
             decoder = BinaryPayloadDecoder.fromRegisters(result.registers, Endian.Big)
             return {"U16": decoder.decode_16bit_uint,  "I16": decoder.decode_16bit_int,
                     "U32": decoder.decode_32bit_uint,  "I32": decoder.decode_32bit_int,
@@ -138,7 +135,7 @@ class OwenModbusClient(BaseClient):
     def _modify_value(self, func, dev, index, value):
         if dev['dp']:
             dp_dev = self.device['Modbus'][dev['dp']]
-            dp = self._read(dp_dev, dev['dp'], index)
+            dp = self._read(dp_dev, index)
             value = func(value, 10.0**dp)
 
         prec = dev['precision']
@@ -146,7 +143,7 @@ class OwenModbusClient(BaseClient):
 
     def get_param(self, name, index=None):
         dev, index = self.check_param('Modbus', name, index)
-        value = self._read(dev, name, index)
+        value = self._read(dev, index)
         return self._modify_value(truediv, dev, index, value)
 
     def set_param(self, name, index=None, value=None):
@@ -166,7 +163,7 @@ class OwenModbusClient(BaseClient):
                                              values=builder.build(),
                                              skip_encode=True,
                                              unit=self.unit)
-        return self._error_check(name, result)
+        return self._error_check(result)
 
 
 __all__ = [ "OwenSerialClient", "OwenModbusClient" ]

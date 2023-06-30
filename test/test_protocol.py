@@ -110,16 +110,16 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual(b"#JIGLPHGNKHRHPQGGGGUMHO\r", self.trm11.make_packet(0, "SP", 0, [65, 177, 154]))
 
     def test_parse_response(self):
-        self.assertEqual(bytearray([0]), self.trm.parse_response(b'#GHHGHUTIKGJI\r', b"#GHGHHUTIGGJKGK\r", "A.LEN"))
-        self.assertEqual(bytearray([0, 0, 0]), self.trm.parse_response(b'#GHHISOOGGGGGQSUR\r', b"#GHGJSOOGGGGGGGUQRK\r", "DON"))
-        self.assertEqual(bytearray([195, 71, 230, 0, 0]), self.trm.parse_response(b'#GHHIUHNTGGGGPULL\r', b"#GHGLUHNTSJKNUMGGGGLPTV\r", "SL.L"))
-        self.assertEqual(bytearray([52, 48, 48, 48, 46, 51, 48, 86]), self.trm.parse_response(b'#GHHGITLRRKVN\r', b"#GHGOITLRJKJGJGJGIUJJJGLMUPPR\r", "VER"))
-        self.assertEqual(bytearray([71, 180, 101]), self.trm.parse_response(b'#GHHGGIJJRIQN\r', b"#GHGJGIJJKNRKMLLNJK\r", "N.ERR"))
-        self.assertEqual(bytearray([100]), self.trm.parse_response(b'#GHHGJONIJKMN\r', b"#GHGHJONIMKKIMP\r", "REST"))
-        self.assertIsNone(self.trm.parse_response(b'#GHHGHUTIKGJI\r', b"", "A.LEN"))                                # if empty message
-        self.assertIsNone(self.trm.parse_response(b'#GHHINNRQGGGGRUIR\r', b"#GHGJGIJJKNNNRQPUSV\r", "CTL"))         # if error code
-        self.assertIsNone(self.trm.parse_response(b'#GHHIUHNTGGGGPULL\r', b"#GHGLUHNTSJKNUMGGGGLPTD\r", "SL.L"))    # if checksum error
-        self.assertTrue(self.trm.parse_response(b'#GHGLUHNTJVOGGGGGGGQGIG\r', b'#GHGLUHNTJVOGGGGGGGQGIG\r', "SL.L"))
+        self.assertEqual(bytearray([0]), self.trm.parse_response(b'#GHHGHUTIKGJI\r', b"#GHGHHUTIGGJKGK\r"))
+        self.assertEqual(bytearray([0, 0, 0]), self.trm.parse_response(b'#GHHISOOGGGGGQSUR\r', b"#GHGJSOOGGGGGGGUQRK\r"))
+        self.assertEqual(bytearray([195, 71, 230, 0, 0]), self.trm.parse_response(b'#GHHIUHNTGGGGPULL\r', b"#GHGLUHNTSJKNUMGGGGLPTV\r"))
+        self.assertEqual(bytearray([52, 48, 48, 48, 46, 51, 48, 86]), self.trm.parse_response(b'#GHHGITLRRKVN\r', b"#GHGOITLRJKJGJGJGIUJJJGLMUPPR\r"))
+        self.assertEqual(bytearray([71, 180, 101]), self.trm.parse_response(b'#GHHGGIJJRIQN\r', b"#GHGJGIJJKNRKMLLNJK\r"))
+        self.assertEqual(bytearray([100]), self.trm.parse_response(b'#GHHGJONIJKMN\r', b"#GHGHJONIMKKIMP\r"))
+        self.assertIsNone(self.trm.parse_response(b'#GHHGHUTIKGJI\r', b""))                                 # if empty message
+        self.assertIsNone(self.trm.parse_response(b'#GHHINNRQGGGGRUIR\r', b"#GHGJGIJJKNNNRQPUSV\r"))        # if error code
+        self.assertIsNone(self.trm.parse_response(b'#GHHIUHNTGGGGPULL\r', b"#GHGLUHNTSJKNUMGGGGLPTD\r"))    # if checksum error
+        self.assertTrue(self.trm.parse_response(b'#GHGLUHNTJVOGGGGGGGQGIG\r', b'#GHGLUHNTJVOGGGGGGGQGIG\r'))
 
 
 if __name__ == "__main__":

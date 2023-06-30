@@ -112,7 +112,7 @@ class Owen(object):
 
         return packet
 
-    def parse_response(self, packet, answer, name):
+    def parse_response(self, packet, answer):
         """ Расшифровка прочитанного пакета """
 
         _logger.debug("Recv frame: %r, size=%d", answer, len(answer))
@@ -138,7 +138,7 @@ class Owen(object):
         if self.owen_crc16(frame[:-2]) != crc:
             _logger.error("OwenProtocolError: Checksum error")
             return None
-        if name != "N.ERR" and cmd == 0x0233:
+        if packet[7:9] != answer[7:9]:      # hash mismatch
             _logger.error("OwenProtocolError: error=%02X, hash=%02X%02X", *data)
             return None
 

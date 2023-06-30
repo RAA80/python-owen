@@ -37,15 +37,15 @@ class TestClient(unittest.TestCase):
     @patch("serial.Serial")
     def test_OwenSerialClient(self, mock_serial):
         transport = mock_serial
-        device = {'Owen': {'A.LEN': {'type': 'U8',  'index': {None: None,}, 'min': 0,     'max': 1},
-                           'DEV':   {'type': 'STR', 'index': {None: None,}, 'min': "",    'max': ""},
-                           'DP':    {'type': 'U8',  'index': {0: 0,},       'min': 0,     'max': 3},
-                           'ADDR':  {'type': 'U16', 'index': {None: None,}, 'min': 0,     'max': 2047},
-                           'PV':    {'type': 'F24', 'index': {None: None,}, 'min': -1999, 'max': 9999},
-                           'SL.H':  {'type': 'F24', 'index': {0: 0,},       'min': -1999, 'max': 9999},
-                           'N.ERR': {'type': 'U24', 'index': {None: None,}, 'min': 0,     'max': 255},
-                           'CMP':   {'type': 'U8',  'index': {0: 0,},       'min': 0,     'max': 4},
-                           'R.OUT': {'type': 'F24', 'index': {None: None,}, 'min': 0,     'max': 1},
+        device = {'Owen': {'A.LEN': {'type': 'U8',  'index': {None: None}, 'min': 0,     'max': 1},
+                           'DEV':   {'type': 'STR', 'index': {None: None}, 'min': "",    'max': ""},
+                           'DP':    {'type': 'U8',  'index': {0: 0},       'min': 0,     'max': 3},
+                           'ADDR':  {'type': 'U16', 'index': {None: None}, 'min': 0,     'max': 2047},
+                           'PV':    {'type': 'F24', 'index': {None: None}, 'min': -1999, 'max': 9999},
+                           'SL.H':  {'type': 'F24', 'index': {0: 0},       'min': -1999, 'max': 9999},
+                           'N.ERR': {'type': 'U24', 'index': {None: None}, 'min': 0,     'max': 255},
+                           'CMP':   {'type': 'U8',  'index': {0: 0},       'min': 0,     'max': 4},
+                           'R.OUT': {'type': 'F24', 'index': {None: None}, 'min': 0,     'max': 1},
                           }
                  }
         unit = 1
@@ -78,14 +78,14 @@ class TestClient(unittest.TestCase):
     @patch("pymodbus.client.sync.ModbusSerialClient")
     def test_OwenModbusClient(self, mock_modbus):
         transport = mock_modbus
-        device = {'Modbus': {'A.LEN': {'type': 'U16', 'index': {None: 0x0102,}, 'min': 0, 'max': 1, 'dp': None, 'precision': 0}}}
+        device = {'Modbus': {'A.LEN': {'type': 'U16', 'index': {None: 0x0102}, 'min': 0, 'max': 1, 'dp': None, 'precision': 0}}}
         unit = 1
 
         client = OwenModbusClient(transport, device, unit)
 
         self.assertTrue(client.connect())
-        self.assertIsNone(client._error_check(name="A.LEN", retcode=None))
-        self.assertTrue(client._error_check(name="A.LEN", retcode=1))
+        self.assertIsNone(client._error_check(retcode=None))
+        self.assertTrue(client._error_check(retcode=1))
         # TODO: add get_param, set_param test
 
 

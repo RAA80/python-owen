@@ -5,14 +5,14 @@ from distutils.core import setup
 
 
 setup(name="python-owen",
-      version='0.2.1',
+      version='0.2.2',
       description='OWEN controllers module',
       url='https://github.com/RAA80/python-owen',
-      author='Ryadno Alexey',
+      author='Alexey Ryadno',
       author_email='aryadno@mail.ru',
       license='MIT',
       packages=['owen'],
-      install_requires=['pymodbus >= 1.3', 'pyserial >= 3.2'],
+      install_requires=['pymodbus < 3', 'pyserial >= 3.2'],
       platforms=['Linux', 'Mac OS X', 'Windows'],
       classifiers=['Development Status :: 4 - Beta',
                    'Intended Audience :: Science/Research',
