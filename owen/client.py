@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import logging
-from operator import truediv, mul
-from pymodbus.payload import BinaryPayloadDecoder, BinaryPayloadBuilder
+from operator import mul, truediv
 from pymodbus.constants import Endian
 from pymodbus.exceptions import ModbusException
+from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
 from pymodbus.pdu import ExceptionResponse
 
 from .protocol import Owen
@@ -52,10 +52,8 @@ class BaseClient(object):
 
         raise NotImplementedError()
 
-    def check_param(self, proto, name, index, value=None):
-        """ Проверка введенных данных """
-
-        dev = self.device[proto][name.upper()]
+    def check_index(self, name, dev, index):
+        """ Проверка индекса """
 
         if not index:
             index = None if None in dev['index'] else 0
@@ -63,11 +61,20 @@ class BaseClient(object):
         if index not in dev['index']:
             raise ValueError("Parameter '{}' not in supported indexes {} index '{}'".
                              format(name, tuple(dev["index"]), index))
-        if value is not None and (dev['min'] is None and dev['max'] is None or
-           value < dev['min'] or value > dev['max']):
+        return index
+
+    def check_value(self, name, dev, value):
+        """ Проверка данных """
+
+        if all([value is None, dev['min'] is None, dev['max'] is None]):
+            return value
+        if all([value is None, dev['min'] is not None, dev['max'] is not None]) or \
+           all([value is not None, dev['min'] is None, dev['max'] is None]) or \
+           all([value is not None, dev['min'] > value]) or \
+           all([value is not None, dev['max'] < value]):
             raise ValueError("Parameter '{}' out of range ({}, {}) value '{}'".
                              format(name, dev['min'], dev['max'], value))
-        return dev, index
+        return value
 
 
 class OwenSerialClient(BaseClient):
@@ -94,12 +101,15 @@ class OwenSerialClient(BaseClient):
         return self._owen.parse_response(packet, answer)
 
     def get_param(self, name, index=None):
-        dev, index = self.check_param('Owen', name, index)
+        dev = self.device['Owen'][name.upper()]
+        index = self.check_index(name, dev, index)
         result = self.send_message(1, name, index)
         return self._owen.unpack_value(dev['type'], result)
 
     def set_param(self, name, index=None, value=None):
-        dev, index = self.check_param('Owen', name, index, value)
+        dev = self.device['Owen'][name.upper()]
+        index = self.check_index(name, dev, index)
+        value = self.check_value(name, dev, value)
         data = self._owen.pack_value(dev['type'], value)
         return self.send_message(0, name, index, data)
 
@@ -114,10 +124,9 @@ class OwenModbusClient(BaseClient):
         return self.socket.connect()
 
     def _error_check(self, retcode):
-        if isinstance(retcode, (ModbusException, ExceptionResponse, type(None))):
-            _logger.error("Unit %d return %s", self.unit, retcode)
-        else:
+        if not isinstance(retcode, (ModbusException, ExceptionResponse, type(None))):
             return True
+        _logger.error("Unit %d return %s", self.unit, retcode)
 
     def _read(self, dev, index):
         count = {"U16": 1, "I16": 1, "U32": 2, "I32": 2, "F32": 2, "STR": 4
@@ -127,9 +136,12 @@ class OwenModbusClient(BaseClient):
                                                     unit=self.unit)
         if self._error_check(result):
             decoder = BinaryPayloadDecoder.fromRegisters(result.registers, Endian.Big)
-            return {"U16": decoder.decode_16bit_uint,  "I16": decoder.decode_16bit_int,
-                    "U32": decoder.decode_32bit_uint,  "I32": decoder.decode_32bit_int,
-                    "F32": decoder.decode_32bit_float, "STR": lambda: decoder.decode_string(8)
+            return {"U16": decoder.decode_16bit_uint,
+                    "I16": decoder.decode_16bit_int,
+                    "U32": decoder.decode_32bit_uint,
+                    "I32": decoder.decode_32bit_int,
+                    "F32": decoder.decode_32bit_float,
+                    "STR": lambda: decoder.decode_string(8)
                    }[dev['type']]()
 
     def _modify_value(self, func, dev, index, value):
@@ -142,12 +154,15 @@ class OwenModbusClient(BaseClient):
         return func(value, 10.0**prec) if prec else value
 
     def get_param(self, name, index=None):
-        dev, index = self.check_param('Modbus', name, index)
+        dev = self.device['Modbus'][name.upper()]
+        index = self.check_index(name, dev, index)
         value = self._read(dev, index)
-        return self._modify_value(truediv, dev, index, value)
+        return self._modify_value(truediv, dev, index, value) if value is not None else None
 
     def set_param(self, name, index=None, value=None):
-        dev, index = self.check_param('Modbus', name, index, value)
+        dev = self.device['Modbus'][name.upper()]
+        index = self.check_index(name, dev, index)
+        value = self.check_value(name, dev, value)
         value = self._modify_value(mul, dev, index, value)
 
         builder = BinaryPayloadBuilder(None, Endian.Big)
