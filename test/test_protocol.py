@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+
 from owen.protocol import Owen
 
 
 class TestOwenProtocol(unittest.TestCase):
-    ''' This is the unittest for Owen protocol '''
+    """ The unittest for Owen protocol. """
 
     def setUp(self):
         self.trm = Owen(unit=1, addr_len_8=True)
@@ -88,7 +89,7 @@ class TestOwenProtocol(unittest.TestCase):
     def test_unpack_value(self):
         self.assertEqual(123.45677947998047, self.trm.unpack_value("F32", bytearray([66, 246, 233, 223])))
         self.assertEqual(123.455078125, self.trm.unpack_value("F24", bytearray([66, 246, 233])))
-        self.assertEqual((0,0), self.trm.unpack_value("U24", bytearray([0, 0, 0])))
+        self.assertEqual((0, 0), self.trm.unpack_value("U24", bytearray([0, 0, 0])))
         self.assertEqual(1234, self.trm.unpack_value("U16", bytearray([4, 210])))
         self.assertEqual(-1234, self.trm.unpack_value("I16", bytearray([251, 46])))
         self.assertEqual(12, self.trm.unpack_value("U8", bytearray([12])))
@@ -111,15 +112,17 @@ class TestOwenProtocol(unittest.TestCase):
 
     def test_parse_response(self):
         self.assertEqual(bytearray([0]), self.trm.parse_response(b'#GHHGHUTIKGJI\r', b"#GHGHHUTIGGJKGK\r"))
-        self.assertEqual(bytearray([0, 0, 0]), self.trm.parse_response(b'#GHHISOOGGGGGQSUR\r', b"#GHGJSOOGGGGGGGUQRK\r"))
-        self.assertEqual(bytearray([195, 71, 230, 0, 0]), self.trm.parse_response(b'#GHHIUHNTGGGGPULL\r', b"#GHGLUHNTSJKNUMGGGGLPTV\r"))
-        self.assertEqual(bytearray([52, 48, 48, 48, 46, 51, 48, 86]), self.trm.parse_response(b'#GHHGITLRRKVN\r', b"#GHGOITLRJKJGJGJGIUJJJGLMUPPR\r"))
-        self.assertEqual(bytearray([71, 180, 101]), self.trm.parse_response(b'#GHHGGIJJRIQN\r', b"#GHGJGIJJKNRKMLLNJK\r"))
-        self.assertEqual(bytearray([100]), self.trm.parse_response(b'#GHHGJONIJKMN\r', b"#GHGHJONIMKKIMP\r"))
-        self.assertIsNone(self.trm.parse_response(b'#GHHGHUTIKGJI\r', b""))                                 # if empty message
-        self.assertIsNone(self.trm.parse_response(b'#GHHINNRQGGGGRUIR\r', b"#GHGJGIJJKNNNRQPUSV\r"))        # if error code
-        self.assertIsNone(self.trm.parse_response(b'#GHHIUHNTGGGGPULL\r', b"#GHGLUHNTSJKNUMGGGGLPTD\r"))    # if checksum error
-        self.assertTrue(self.trm.parse_response(b'#GHGLUHNTJVOGGGGGGGQGIG\r', b'#GHGLUHNTJVOGGGGGGGQGIG\r'))
+        self.assertEqual(bytearray([0, 0, 0]), self.trm.parse_response(b"#GHHISOOGGGGGQSUR\r", b"#GHGJSOOGGGGGGGUQRK\r"))
+        self.assertEqual(bytearray([195, 71, 230, 0, 0]), self.trm.parse_response(b"#GHHIUHNTGGGGPULL\r", b"#GHGLUHNTSJKNUMGGGGLPTV\r"))
+        self.assertEqual(bytearray([52, 48, 48, 48, 46, 51, 48, 86]), self.trm.parse_response(b"#GHHGITLRRKVN\r", b"#GHGOITLRJKJGJGJGIUJJJGLMUPPR\r"))
+        self.assertEqual(bytearray([71, 180, 101]), self.trm.parse_response(b"#GHHGGIJJRIQN\r", b"#GHGJGIJJKNRKMLLNJK\r"))
+        self.assertEqual(bytearray([100]), self.trm.parse_response(b"#GHHGJONIJKMN\r", b"#GHGHJONIMKKIMP\r"))
+        self.assertIsNone(self.trm.parse_response(b"#GHHGHUTIKGJI\r", b""))                                 # if empty message
+        self.assertIsNone(self.trm.parse_response(b"#GHHGHUTIKGJI\r", b"GHHGHUTIKGJI\r"))                   # if first byte not '#'
+        self.assertIsNone(self.trm.parse_response(b"#GHHGHUTIKGJI\r", b"#GHHGHUTIKGJI"))                    # if last byte not '\r'
+        self.assertIsNone(self.trm.parse_response(b"#GHHINNRQGGGGRUIR\r", b"#GHGJGIJJKNNNRQPUSV\r"))        # if error code
+        self.assertIsNone(self.trm.parse_response(b"#GHHIUHNTGGGGPULL\r", b"#GHGLUHNTSJKNUMGGGGLPTD\r"))    # if checksum error
+        self.assertTrue(self.trm.parse_response(b"#GHGLUHNTJVOGGGGGGGQGIG\r", b"#GHGLUHNTJVOGGGGGGGQGIG\r"))
 
 
 if __name__ == "__main__":
