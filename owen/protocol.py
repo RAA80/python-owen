@@ -17,7 +17,9 @@ _OWEN_NAME = {"0": 0,  "1": 2,  "2": 4,  "3": 6,  "4": 8,
               "U": 60, "V": 62, "W": 64, "X": 66, "Y": 68,
               "Z": 70, "-": 72, "_": 74, "/": 76, " ": 78}
 
-_OWEN_TYPE = {"F32": {"pack": lambda value: pack(">f", value)[:4],
+_OWEN_TYPE = {"F32+T": {"pack": lambda value: pack(">fH", value)[:6],
+                        "unpack": lambda value: unpack(">fH", value[:6])},
+              "F32": {"pack": lambda value: pack(">f", value)[:4],
                       "unpack": lambda value: unpack(">f", value[:4])[0]},
               "F24": {"pack": lambda value: pack(">f", value)[:3],
                       "unpack": lambda value: unpack(">f", value[:3] + b"\x00")[0]},
@@ -45,7 +47,8 @@ class Owen(object):
     def __repr__(self):
         return "Owen(unit={}, addr_len={}".format(self.unit, self.addr_len_8)
 
-    def fast_calc(self, value, crc, bits):
+    @staticmethod
+    def fast_calc(value, crc, bits):
         """ Вычисление значения полинома. """
 
         return reduce(lambda crc, i: crc << 1 & 0xFFFF ^ (0x8F57
@@ -70,24 +73,28 @@ class Owen(object):
 
         return self.owen_hash(owen_name)
 
-    def encode_frame(self, frame):
+    @staticmethod
+    def encode_frame(frame):
         """ Преобразование пакета из бинарного вида в строковый. """
 
         chars = [chr(71 + (num >> 4 & 0xF)) + chr(71 + (num & 0xF)) for num in frame]
         return ("#" + "".join(chars) + "\r").encode("ascii")
 
-    def decode_frame(self, frame):
+    @staticmethod
+    def decode_frame(frame):
         """ Преобразование пакета из строкового вида в бинарный. """
 
         return [ord(i) - 71 << 4 | ord(j) - 71 & 0xF
                 for i, j in zip(*[iter(frame[1:-1])] * 2)]
 
-    def pack_value(self, frmt, value):
+    @staticmethod
+    def pack_value(frmt, value):
         """ Упаковка данных. """
 
         return None if value is None else list(bytearray(_OWEN_TYPE[frmt]["pack"](value)))
 
-    def unpack_value(self, frmt, value):
+    @staticmethod
+    def unpack_value(frmt, value):
         """ Распаковка данных. """
 
         if value:

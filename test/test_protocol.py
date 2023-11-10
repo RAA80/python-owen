@@ -87,6 +87,7 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertIsNone(self.trm.pack_value("U8", None))                 # if empty buffer
 
     def test_unpack_value(self):
+        self.assertEqual((-49.99966049194336, 4065), self.trm.unpack_value("F32+T", bytearray([194, 71, 255, 167, 15, 225])))
         self.assertEqual(123.45677947998047, self.trm.unpack_value("F32", bytearray([66, 246, 233, 223])))
         self.assertEqual(123.455078125, self.trm.unpack_value("F24", bytearray([66, 246, 233])))
         self.assertEqual((0, 0), self.trm.unpack_value("U24", bytearray([0, 0, 0])))

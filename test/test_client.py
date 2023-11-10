@@ -60,13 +60,25 @@ class TestClientMixin(unittest.TestCase):
         self.assertRaises(ValueError, lambda: self.client.check_index(name=name, dev=dev, index=1))
 
     def test_check_value(self):
-        name = "A.LEN"
+        name = "DEV"
         dev = TRM201["Owen"][name]
 
         # correct value
-        self.assertEqual(1, self.client.check_value(name=name, dev=dev, value=1))
+        self.assertIsNone(self.client.check_value(name=name, dev=dev, value=None))
         # invalid value
-        self.assertRaises(ValueError, lambda: self.client.check_value(name=name, dev=dev, value=2))
+        self.assertRaises(ValueError, lambda: self.client.check_value(name=name, dev=dev, value=1))
+
+        name = "SP"
+        dev = TRM201["Owen"][name]
+
+        # correct value
+        self.assertEqual(10.0, self.client.check_value(name=name, dev=dev, value=10.0))
+        # invalid value (> max)
+        self.assertRaises(ValueError, lambda: self.client.check_value(name=name, dev=dev, value=10000))
+        # invalid value (< min)
+        self.assertRaises(ValueError, lambda: self.client.check_value(name=name, dev=dev, value=-10000))
+        # invalid value
+        self.assertRaises(ValueError, lambda: self.client.check_value(name=name, dev=dev, value=None))
 
 
 class TestOwenSerialClient(unittest.TestCase):

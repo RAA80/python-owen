@@ -42,7 +42,8 @@ class ClientMixin(object):
             self.socket.close()
         self.socket = None
 
-    def check_index(self, name, dev, index):
+    @staticmethod
+    def check_index(name, dev, index):
         """ Проверка индекса. """
 
         if not index:
@@ -53,15 +54,13 @@ class ClientMixin(object):
 
         return index
 
-    def check_value(self, name, dev, value):
+    @staticmethod
+    def check_value(name, dev, value):
         """ Проверка данных. """
 
-        if all([value is None, dev["min"] is None, dev["max"] is None]):
-            return value
         if all([value is None, dev["min"] is not None, dev["max"] is not None]) or \
-           all([value is not None, dev["min"] is None, dev["max"] is None]) or \
-           all([value is not None, dev["min"] > value]) or \
-           all([value is not None, dev["max"] < value]):
+           all([value is not None, dev["min"] == dev["max"] is None or
+                                   value < dev["min"] or value > dev["max"]]):
             msg = "An '{}' value of '{}' is out of range".format(name, value)
             raise ValueError(msg)
 
