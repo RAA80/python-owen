@@ -8,6 +8,26 @@ from struct import error, pack, unpack
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
 
+
+def unpack_sdot(value):
+    value = unpack(">H", value[:2])[0]
+
+    sign = value >> 15 & 1
+    exponent = value >> 12 & 7
+    mantissa = value & 0x0FFF
+
+    return (-1) ** sign * 10 ** (-exponent) * mantissa
+
+
+def pack_sdot(value):
+    sign = int(value < 0)
+    exponent = len(str(value).split(".")[1])
+    mantissa = int(str(abs(value)).replace(".", ""))
+
+    result = int("{:1b}{:03b}{:012b}".format(sign, exponent, mantissa), 2)
+    return pack(">H", result)[:2]
+
+
 _OWEN_NAME = {"0": 0,  "1": 2,  "2": 4,  "3": 6,  "4": 8,
               "5": 10, "6": 12, "7": 14, "8": 16, "9": 18,
               "A": 20, "B": 22, "C": 24, "D": 26, "E": 28,
@@ -19,6 +39,8 @@ _OWEN_NAME = {"0": 0,  "1": 2,  "2": 4,  "3": 6,  "4": 8,
 
 _OWEN_TYPE = {"F32+T": {"pack": lambda value: pack(">fH", value)[:6],
                         "unpack": lambda value: unpack(">fH", value[:6])},
+              "SDOT":  {"pack": lambda value: pack_sdot(value),
+                        "unpack": lambda value: unpack_sdot(value)},
               "F32": {"pack": lambda value: pack(">f", value)[:4],
                       "unpack": lambda value: unpack(">f", value[:4])[0]},
               "F24": {"pack": lambda value: pack(">f", value)[:3],
@@ -45,7 +67,7 @@ class Owen(object):
         self.addr_len_8 = addr_len_8
 
     def __repr__(self):
-        return "Owen(unit={}, addr_len={}".format(self.unit, self.addr_len_8)
+        return "Owen(unit={}, addr_len_8={}".format(self.unit, self.addr_len_8)
 
     @staticmethod
     def fast_calc(value, crc, bits):
@@ -64,27 +86,26 @@ class Owen(object):
 
         return reduce(lambda crc, val: self.fast_calc(val << 1, crc, 7), packet, 0)
 
-    def name2hash(self, name):
-        """ Преобразование локального идентификатора в двоичный вид. """
+    @staticmethod
+    def name2code(name):
+        """ Преобразование локального идентификатора в числовой код. """
 
         owen_name = reduce(lambda x, ch: x[:-1] + [x[-1] + 1] if ch == "."
                            else x + [_OWEN_NAME[ch]], name.upper(), [])
-        owen_name += [_OWEN_NAME[" "]] * (4 - len(owen_name))
-
-        return self.owen_hash(owen_name)
+        return owen_name + [_OWEN_NAME[" "]] * (4 - len(owen_name))
 
     @staticmethod
     def encode_frame(frame):
-        """ Преобразование пакета из бинарного вида в строковый. """
+        """ Преобразование пакета из числового вида в строковый. """
 
-        chars = [chr(71 + (num >> 4 & 0xF)) + chr(71 + (num & 0xF)) for num in frame]
+        chars = (chr(71 + (num >> 4)) + chr(71 + (num & 0xF)) for num in frame)
         return ("#" + "".join(chars) + "\r").encode("ascii")
 
     @staticmethod
     def decode_frame(frame):
-        """ Преобразование пакета из строкового вида в бинарный. """
+        """ Преобразование пакета из строкового вида в числовой. """
 
-        return [ord(i) - 71 << 4 | ord(j) - 71 & 0xF
+        return [(ord(i) - 71 << 4) + (ord(j) - 71 & 0xF)
                 for i, j in zip(*[iter(frame[1:-1])] * 2)]
 
     @staticmethod
@@ -114,7 +135,7 @@ class Owen(object):
         if index is not None:
             data.extend([index >> 8 & 0xFF, index & 0xFF])
 
-        cmd = self.name2hash(name)
+        cmd = self.owen_hash(self.name2code(name))
         frame = [addr0, addr1 | flag << 4 | len(data), cmd >> 8 & 0xFF, cmd & 0xFF] + data
         crc = self.owen_crc16(frame)
         packet = self.encode_frame(frame + [crc >> 8 & 0xFF, crc & 0xFF])
@@ -150,6 +171,9 @@ class Owen(object):
 
         if self.owen_crc16(frame[:-2]) != crc:
             _logger.error("OwenProtocolError: Checksum error")
+            return None
+        if address != self.unit:
+            _logger.error("OwenProtocolError: Sender and receiver addresses mismatch")
             return None
         if packet[7:9] != answer[7:9]:      # hash mismatch
             _logger.error("OwenProtocolError: error=%02X, hash=%02X%02X", *data)

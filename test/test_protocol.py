@@ -44,16 +44,16 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual(11410, self.trm.owen_hash([28, 62, 72, 2]))
         self.assertEqual(233, self.trm.owen_hash([36, 46, 36, 58]))
 
-    def test_name2hash(self):
-        self.assertEqual(7890, self.trm.name2hash("A.LEN"))
-        self.assertEqual(60448, self.trm.name2hash("SL.H"))
-        self.assertEqual(47327, self.trm.name2hash("PV"))
-        self.assertEqual(39238, self.trm.name2hash("R.OUT"))
-        self.assertEqual(13800, self.trm.name2hash("O"))
-        self.assertEqual(46941, self.trm.name2hash("C.SP.O"))
-        self.assertEqual(64104, self.trm.name2hash("CJ-.C"))
-        self.assertEqual(11410, self.trm.name2hash("EV-1"))
-        self.assertEqual(233, self.trm.name2hash("INIT"))
+    def test_name2code(self):
+        self.assertEqual([21, 42, 28, 46], self.trm.name2code("A.LEN"))
+        self.assertEqual([56, 43, 34, 78], self.trm.name2code("SL.H"))
+        self.assertEqual([50, 62, 78, 78], self.trm.name2code("PV"))
+        self.assertEqual([55, 48, 60, 58], self.trm.name2code("R.OUT"))
+        self.assertEqual([48, 78, 78, 78], self.trm.name2code("O"))
+        self.assertEqual([25, 56, 51, 48], self.trm.name2code("C.SP.O"))
+        self.assertEqual([24, 38, 73, 24], self.trm.name2code("CJ-.C"))
+        self.assertEqual([28, 62, 72, 2], self.trm.name2code("EV-1"))
+        self.assertEqual([36, 46, 36, 58], self.trm.name2code("INIT"))
 
     def test_encode_frame(self):
         self.assertEqual(b"#GHHGHUTIKGJI\r", self.trm.encode_frame([1, 16, 30, 210, 64, 50]))
@@ -78,6 +78,7 @@ class TestOwenProtocol(unittest.TestCase):
 
     def test_pack_value(self):
         self.assertEqual([66, 246, 233, 223], self.trm.pack_value("F32", 123.45678))
+        self.assertEqual([164, 14], self.trm.pack_value("SDOT", -10.38))
         self.assertEqual([66, 246, 233], self.trm.pack_value("F24", 123.45678))
         self.assertEqual([4, 210], self.trm.pack_value("U16", 1234))
         self.assertEqual([251, 46], self.trm.pack_value("I16", -1234))
@@ -89,6 +90,7 @@ class TestOwenProtocol(unittest.TestCase):
     def test_unpack_value(self):
         self.assertEqual((-49.99966049194336, 4065), self.trm.unpack_value("F32+T", bytearray([194, 71, 255, 167, 15, 225])))
         self.assertEqual(123.45677947998047, self.trm.unpack_value("F32", bytearray([66, 246, 233, 223])))
+        self.assertEqual(350.0, self.trm.unpack_value("SDOT", bytearray([29, 172])))
         self.assertEqual(123.455078125, self.trm.unpack_value("F24", bytearray([66, 246, 233])))
         self.assertEqual((0, 0), self.trm.unpack_value("U24", bytearray([0, 0, 0])))
         self.assertEqual(1234, self.trm.unpack_value("U16", bytearray([4, 210])))
@@ -100,8 +102,8 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertIsNone(self.trm.unpack_value("F32", bytearray([253])))  # if error code
 
     def test_make_packet(self):
-        self.assertEqual(b"#GHHGHUTIKGJI\r", self.trm.make_packet(1, "A.LEN", None, []))
-        self.assertEqual(b"#GHHISOOGGGGGQSUR\r", self.trm.make_packet(1, "DON", 0, []))
+        self.assertEqual(b"#GHHGHUTIKGJI\r", self.trm.make_packet(1, "A.LEN", None, None))
+        self.assertEqual(b"#GHHISOOGGGGGQSUR\r", self.trm.make_packet(1, "DON", 0, None))
         self.assertEqual(b"#GHGLJPVJGGGGGGGGGGGRJJ\r", self.trm.make_packet(0, "FB", 0, [0, 0, 0]))
         self.assertEqual(b"#GHGLUHNTSJKNUMGGGGLPTV\r", self.trm.make_packet(0, "SL.L", 0, [195, 71, 230]))
         self.assertEqual(b"#GHGHRNIUGGMJSQ\r", self.trm.make_packet(0, "SBIT", None, [0]))
@@ -123,6 +125,7 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertIsNone(self.trm.parse_response(b"#GHHGHUTIKGJI\r", b"#GHHGHUTIKGJI"))                    # if last byte not '\r'
         self.assertIsNone(self.trm.parse_response(b"#GHHINNRQGGGGRUIR\r", b"#GHGJGIJJKNNNRQPUSV\r"))        # if error code
         self.assertIsNone(self.trm.parse_response(b"#GHHIUHNTGGGGPULL\r", b"#GHGLUHNTSJKNUMGGGGLPTD\r"))    # if checksum error
+        self.assertIsNone(self.trm.parse_response(b"#GHHGROTVJNPQ\r", b"#IJKJGIJJJHKOKNIJTO\r"))            # if addresses mismatch
         self.assertTrue(self.trm.parse_response(b"#GHGLUHNTJVOGGGGGGGQGIG\r", b"#GHGLUHNTJVOGGGGGGGQGIG\r"))
 
 

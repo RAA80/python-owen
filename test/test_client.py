@@ -30,7 +30,7 @@ class FakeOwenSerialClient(OwenSerialClient):
                 b"#GHGIPVMIGGGHNHIR\r": b"#GHGIPVMIGGGHNHIR\r",             # запись параметра "ADDR" тип "U16" без индекса
                 b"#GHGJPPKMGGGGGGQMGJ\r": b"#GHGJPPKMGGGGGGQMGJ\r",         # запись параметра "R.OUT" тип "F24" без индекса
                 b"#GHGLUSIGKKJROGGGGGPVUS\r": b"#GHGLUSIGKKJROGGGGGPVUS\r", # запись параметра "SL.H" тип "F24" с индексом
-                b"#GHGGGGUPJSUL\r": b"",                                    # запись параметра "INIT" тип "U8" без индексом
+                b"#GHGGGGUPJSUL\r": b"",                                    # запись параметра "INIT" тип "U8" без индекса
                }[packet]
 
 
