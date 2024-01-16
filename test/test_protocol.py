@@ -79,6 +79,8 @@ class TestOwenProtocol(unittest.TestCase):
     def test_pack_value(self):
         self.assertEqual([66, 246, 233, 223], self.trm.pack_value("F32", 123.45678))
         self.assertEqual([164, 14], self.trm.pack_value("SDOT", -10.38))
+        self.assertEqual([29, 172], self.trm.pack_value("SDOT", 350.0))
+        self.assertEqual([16, 16, 4], self.trm.pack_value("SDOT", 410.0))
         self.assertEqual([66, 246, 233], self.trm.pack_value("F24", 123.45678))
         self.assertEqual([4, 210], self.trm.pack_value("U16", 1234))
         self.assertEqual([251, 46], self.trm.pack_value("I16", -1234))
@@ -91,6 +93,7 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual((-49.99966049194336, 4065), self.trm.unpack_value("F32+T", bytearray([194, 71, 255, 167, 15, 225])))
         self.assertEqual(123.45677947998047, self.trm.unpack_value("F32", bytearray([66, 246, 233, 223])))
         self.assertEqual(350.0, self.trm.unpack_value("SDOT", bytearray([29, 172])))
+        self.assertEqual(410.0, self.trm.unpack_value("SDOT", bytearray([16, 16, 4])))
         self.assertEqual(123.455078125, self.trm.unpack_value("F24", bytearray([66, 246, 233])))
         self.assertEqual((0, 0), self.trm.unpack_value("U24", bytearray([0, 0, 0])))
         self.assertEqual(1234, self.trm.unpack_value("U16", bytearray([4, 210])))

@@ -10,11 +10,17 @@ _logger.addHandler(logging.NullHandler())
 
 
 def unpack_sdot(value):
-    value = unpack(">H", value[:2])[0]
+    if len(value) in (2, 4):    # w/o or with index
+        value = unpack(">H", value[:2])[0]
+        sign = value >> 15 & 1
+        exponent = value >> 12 & 7
+        mantissa = value & 0x0FFF
 
-    sign = value >> 15 & 1
-    exponent = value >> 12 & 7
-    mantissa = value & 0x0FFF
+    elif len(value) in (3, 5):  # w/o or with index
+        value = unpack(">I", b"\x00" + value[:3])[0]
+        sign = value >> 23 & 1
+        exponent = value >> 20 & 7
+        mantissa = value & 0xFFFFF
 
     return (-1) ** sign * 10 ** (-exponent) * mantissa
 
@@ -24,8 +30,12 @@ def pack_sdot(value):
     exponent = len(str(value).split(".")[1])
     mantissa = int(str(abs(value)).replace(".", ""))
 
-    result = int("{:1b}{:03b}{:012b}".format(sign, exponent, mantissa), 2)
-    return pack(">H", result)[:2]
+    if mantissa < 4096:
+        result = int("{:1b}{:03b}{:012b}".format(sign, exponent, mantissa), 2)
+        return pack(">H", result)[:2]
+    else:
+        result = int("{:1b}{:03b}{:020b}".format(sign, exponent, mantissa), 2)
+        return pack(">I", result)[1:4]
 
 
 _OWEN_NAME = {"0": 0,  "1": 2,  "2": 4,  "3": 6,  "4": 8,
