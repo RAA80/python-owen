@@ -102,7 +102,7 @@ class OwenSerialClient(ClientMixin):
         dev = self.device["Owen"][name.upper()]
         index = self.check_index(name, dev, index)
         result = self.send_message(1, name, index)
-        return self._owen.unpack_value(dev["type"], result)
+        return self._owen.unpack_value(dev["type"], result, index)
 
     def set_param(self, name, index=None, value=None):
         """ Запись данных в устройство. """

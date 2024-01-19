@@ -3,39 +3,16 @@
 
 import logging
 from functools import reduce
-from struct import error, pack, unpack
+from struct import error
+
+from .converter import (pack_f24, pack_f32, pack_f32t, pack_i8, pack_i16,
+                        pack_sdot, pack_str, pack_u8, pack_u16, pack_u24,
+                        unpack_f24, unpack_f32, unpack_f32t, unpack_i8,
+                        unpack_i16, unpack_sdot, unpack_str, unpack_u8,
+                        unpack_u16, unpack_u24)
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
-
-
-def unpack_sdot(value):
-    if len(value) in (2, 4):    # w/o or with index
-        value = unpack(">H", value[:2])[0]
-        sign = value >> 15 & 1
-        exponent = value >> 12 & 7
-        mantissa = value & 0x0FFF
-
-    elif len(value) in (3, 5):  # w/o or with index
-        value = unpack(">I", b"\x00" + value[:3])[0]
-        sign = value >> 23 & 1
-        exponent = value >> 20 & 7
-        mantissa = value & 0xFFFFF
-
-    return (-1) ** sign * 10 ** (-exponent) * mantissa
-
-
-def pack_sdot(value):
-    sign = int(value < 0)
-    exponent = len(str(value).split(".")[1])
-    mantissa = int(str(abs(value)).replace(".", ""))
-
-    if mantissa < 4096:
-        result = int("{:1b}{:03b}{:012b}".format(sign, exponent, mantissa), 2)
-        return pack(">H", result)[:2]
-    else:
-        result = int("{:1b}{:03b}{:020b}".format(sign, exponent, mantissa), 2)
-        return pack(">I", result)[1:4]
 
 
 _OWEN_NAME = {"0": 0,  "1": 2,  "2": 4,  "3": 6,  "4": 8,
@@ -47,26 +24,16 @@ _OWEN_NAME = {"0": 0,  "1": 2,  "2": 4,  "3": 6,  "4": 8,
               "U": 60, "V": 62, "W": 64, "X": 66, "Y": 68,
               "Z": 70, "-": 72, "_": 74, "/": 76, " ": 78}
 
-_OWEN_TYPE = {"F32+T": {"pack": lambda value: pack(">fH", value)[:6],
-                        "unpack": lambda value: unpack(">fH", value[:6])},
-              "SDOT":  {"pack": lambda value: pack_sdot(value),
-                        "unpack": lambda value: unpack_sdot(value)},
-              "F32": {"pack": lambda value: pack(">f", value)[:4],
-                      "unpack": lambda value: unpack(">f", value[:4])[0]},
-              "F24": {"pack": lambda value: pack(">f", value)[:3],
-                      "unpack": lambda value: unpack(">f", value[:3] + b"\x00")[0]},
-              "U16": {"pack": lambda value: pack(">H", value)[:2],
-                      "unpack": lambda value: unpack(">H", value[:2])[0]},
-              "I16": {"pack": lambda value: pack(">h", value)[:2],
-                      "unpack": lambda value: unpack(">h", value[:2])[0]},
-              "U8":  {"pack": lambda value: pack(">B", value)[:1],
-                      "unpack": lambda value: unpack(">B", value[:1])[0]},
-              "I8":  {"pack": lambda value: pack(">b", value)[:1],
-                      "unpack": lambda value: unpack(">b", value[:1])[0]},
-              "U24": {"pack": lambda value: pack(">BH", value)[:3],         # для
-                      "unpack": lambda value: unpack(">BH", value[:3])},    # N.err
-              "STR": {"pack": lambda value: value[::-1],
-                      "unpack": lambda value: value[::-1]}}
+_OWEN_TYPE = {"F32+T": {"pack": pack_f32t, "unpack": unpack_f32t},
+              "SDOT":  {"pack": pack_sdot, "unpack": unpack_sdot},
+              "F32":   {"pack": pack_f32,  "unpack": unpack_f32},
+              "F24":   {"pack": pack_f24,  "unpack": unpack_f24},
+              "U16":   {"pack": pack_u16,  "unpack": unpack_u16},
+              "I16":   {"pack": pack_i16,  "unpack": unpack_i16},
+              "U8":    {"pack": pack_u8,   "unpack": unpack_u8},
+              "I8":    {"pack": pack_i8,   "unpack": unpack_i8},
+              "U24":   {"pack": pack_u24,  "unpack": unpack_u24},   # для N.err
+              "STR":   {"pack": pack_str,  "unpack": unpack_str}}
 
 
 class Owen(object):
@@ -125,14 +92,14 @@ class Owen(object):
         return None if value is None else list(bytearray(_OWEN_TYPE[frmt]["pack"](value)))
 
     @staticmethod
-    def unpack_value(frmt, value):
+    def unpack_value(frmt, value, index):
         """ Распаковка данных. """
 
         if value:
             try:
-                return _OWEN_TYPE[frmt]["unpack"](value)
+                return _OWEN_TYPE[frmt]["unpack"](value, index)
             except error:
-                errcode = _OWEN_TYPE["U8"]["unpack"](value)
+                errcode = _OWEN_TYPE["U8"]["unpack"](value, index)
                 _logger.error("OwenProtocolError: error=%02X", errcode)
 
     def make_packet(self, flag, name, index, data=None):
