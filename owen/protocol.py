@@ -118,7 +118,8 @@ class Owen(object):
         packet = self.encode_frame(frame + [crc >> 8 & 0xFF, crc & 0xFF])
 
         _logger.debug("Send param: address=%d, flag=%d, size=%d, cmd=%04X, "
-                      "data=%s, crc=%04X", self.unit, flag, len(data), cmd, data, crc)
+                      "index=%s, data=%s, crc=%04X", self.unit, flag, len(data),
+                      cmd, index, data, crc)
         _logger.debug("Send frame: %r, size=%d", packet, len(packet))
 
         return packet

@@ -138,22 +138,13 @@ def unpack_sdot(value, index):
     if index is not None:
         del value[-2:]
 
-    if len(value) == 1:
-        value = unpack(">B", value[:1])[0]
-        sign = value >> 7 & 1
-        exponent = value >> 4 & 7
-        mantissa = value & 0x0F
-
-    elif len(value) == 2:
-        value = unpack(">H", value[:2])[0]
-        sign = value >> 15 & 1
-        exponent = value >> 12 & 7
-        mantissa = value & 0x0FFF
-
-    elif len(value) == 3:
-        value = unpack(">I", b"\x00" + value[:3])[0]
-        sign = value >> 23 & 1
-        exponent = value >> 20 & 7
-        mantissa = value & 0x0FFFFF
+    arg, shift = {1: ((">B", value), 4),
+                  2: ((">H", value), 12),
+                  3: ((">I", b"\x00" + value), 20),
+                 }[len(value)]
+    data = unpack(*arg)[0]
+    sign = data >> (shift + 3) & 1
+    exponent = data >> shift & 7
+    mantissa = data & (2 ** shift - 1)
 
     return (-1) ** sign * 10 ** (-exponent) * mantissa

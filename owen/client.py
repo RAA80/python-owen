@@ -193,4 +193,4 @@ class OwenModbusClient(ClientMixin):
         return self.check_error(result)
 
 
-__all__ = ["OwenSerialClient", "OwenModbusClient"]
+__all__ = ["OwenModbusClient", "OwenSerialClient"]
