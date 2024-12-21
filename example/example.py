@@ -1,5 +1,6 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
+#! /usr/bin/env python3
+
+"""Пример использования библиотеки."""
 
 import logging
 
@@ -47,7 +48,7 @@ if __name__ == "__main__":
 
     name = "SP"     # Остальные названия параметров в файле 'device.py' для конкретного устройства
     value = trm.get_param(name=name, index=0)
-    print("{} = {}".format(name, value))
+    print(f"{name} = {value}")
 
     result = trm.set_param(name=name, index=0, value=value)
-    print("{} = {}".format(name, result))
+    print(f"{name} = {result}")

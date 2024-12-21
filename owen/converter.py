@@ -1,160 +1,162 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
+#! /usr/bin/env python3
+
+"""Функции для упаковки и распаковки разных типов данных."""
 
 from binascii import hexlify, unhexlify
 from decimal import Decimal
 from struct import pack, unpack
 
 
-def pack_str(value):
-    """ Упаковка данных типа STR. """
+def pack_str(value: str) -> bytes:
+    """Упаковка данных типа STR."""
 
-    return value[::-1]
-
-
-def unpack_str(value, index):
-    """ Распаковка данных типа STR. """
-
-    return value[::-1]
+    return bytes(value[::-1], encoding="cp1251")
 
 
-def pack_u24(value):
-    """ Упаковка данных типа U24. """
+def unpack_str(value: bytes, index: int) -> str:
+    """Распаковка данных типа STR."""
 
-    return pack(">BH", value)[:3]
+    return bytes(value[::-1]).decode("cp1251")
 
 
-def unpack_u24(value, index):
-    """ Распаковка данных типа U24. """
+def pack_u24(value: tuple[int, int]) -> bytes:
+    """Упаковка данных типа U24."""
+
+    return pack(">BH", *value)[:3]
+
+
+def unpack_u24(value: bytes, index: int) -> tuple[int, int]:
+    """Распаковка данных типа U24."""
 
     return unpack(">BH", value[:3])
 
 
-def pack_i8(value):
-    """ Упаковка данных типа I8. """
+def pack_i8(value: int) -> bytes:
+    """Упаковка данных типа I8."""
 
     return pack(">b", value)[:1]
 
 
-def unpack_i8(value, index):
-    """ Распаковка данных типа I8. """
+def unpack_i8(value: bytes, index: int) -> int:
+    """Распаковка данных типа I8."""
 
     return unpack(">b", value[:1])[0]
 
 
-def pack_u8(value):
-    """ Упаковка данных типа U8. """
+def pack_u8(value: int) -> bytes:
+    """Упаковка данных типа U8."""
 
     return pack(">B", value)[:1]
 
 
-def unpack_u8(value, index):
-    """ Распаковка данных типа U8. """
+def unpack_u8(value: bytes, index: int) -> int:
+    """Распаковка данных типа U8."""
 
     return unpack(">B", value[:1])[0]
 
 
-def pack_i16(value):
-    """ Упаковка данных типа I16. """
+def pack_i16(value: int) -> bytes:
+    """Упаковка данных типа I16."""
 
     return pack(">h", value)[:2]
 
 
-def unpack_i16(value, index):
-    """ Распаковка данных типа I16. """
+def unpack_i16(value: bytes, index: int) -> int:
+    """Распаковка данных типа I16."""
 
     return unpack(">h", value[:2])[0]
 
 
-def pack_u16(value):
-    """ Упаковка данных типа U16. """
+def pack_u16(value: int) -> bytes:
+    """Упаковка данных типа U16."""
 
     return pack(">H", value)[:2]
 
 
-def unpack_u16(value, index):
-    """ Распаковка данных типа U16. """
+def unpack_u16(value: bytes, index: int) -> int:
+    """Распаковка данных типа U16."""
 
     return unpack(">H", value[:2])[0]
 
 
-def pack_f24(value):
-    """ Упаковка данных типа F24. """
+def pack_f24(value: float) -> bytes:
+    """Упаковка данных типа F24."""
 
     return pack(">f", value)[:3]
 
 
-def unpack_f24(value, index):
-    """ Распаковка данных типа F24. """
+def unpack_f24(value: bytes, index: int) -> float:
+    """Распаковка данных типа F24."""
 
     return unpack(">f", value[:3] + b"\x00")[0]
 
 
-def pack_f32(value):
-    """ Упаковка данных типа F32. """
+def pack_f32(value: float) -> bytes:
+    """Упаковка данных типа F32."""
 
     return pack(">f", value)[:4]
 
 
-def unpack_f32(value, index):
-    """ Распаковка данных типа F32. """
+def unpack_f32(value: bytes, index: int) -> float:
+    """Распаковка данных типа F32."""
 
     return unpack(">f", value[:4])[0]
 
 
-def pack_f32t(value):
-    """ Упаковка данных типа F32+T. """
+def pack_f32t(value: tuple[float, int]) -> bytes:
+    """Упаковка данных типа F32+T."""
 
-    return pack(">fH", value)[:6]
+    return pack(">fH", *value)[:6]
 
 
-def unpack_f32t(value, index):
-    """ Распаковка данных типа F32+T. """
+def unpack_f32t(value: bytes, index: int) -> tuple[float, int]:
+    """Распаковка данных типа F32+T."""
 
     return unpack(">fH", value[:6])
 
 
-def pack_i32(value):
-    """ Упаковка данных типа I32. """
+def pack_i32(value: int) -> bytes:
+    """Упаковка данных типа I32."""
 
     return pack(">i", value)[:4]
 
 
-def unpack_i32(value, index):
-    """ Распаковка данных типа I32. """
+def unpack_i32(value: bytes, index: int) -> int:
+    """Распаковка данных типа I32."""
 
-    return unpack(">i", value[:4])
+    return unpack(">i", value[:4])[0]
 
 
-def pack_u32(value):
-    """ Упаковка данных типа U32. """
+def pack_u32(value: int) -> bytes:
+    """Упаковка данных типа U32."""
 
     return pack(">I", value)[:4]
 
 
-def unpack_u32(value, index):
-    """ Распаковка данных типа U32. """
+def unpack_u32(value: bytes, index: int) -> int:
+    """Распаковка данных типа U32."""
 
-    return unpack(">I", value[:4])
+    return unpack(">I", value[:4])[0]
 
 
-def pack_sdot(value):
-    """ Упаковка данных типа STORED_DOT. """
+def pack_sdot(value: float) -> bytes:
+    """Упаковка данных типа STORED_DOT."""
 
-    sign, mantissa, exponent = Decimal(str(value)).as_tuple()
-    mantissa = int("".join(map(str, mantissa)))
+    sign, digits, exponent = Decimal(str(value)).as_tuple()
+    mantissa = int("".join(map(str, digits)))
 
     frmt, size, chunk = {mantissa < 16: (">B", 4, slice(1)),
                          mantissa >= 4096: (">I", 20, slice(1, 4)),
                         }.get(True, (">H", 12, slice(2)))
 
-    bin_str = "{:1b}{:03b}{:0{}b}".format(sign, abs(exponent), mantissa, size)
+    bin_str = f"{sign:1b}{abs(exponent):03b}{mantissa:0{size}b}"
     return pack(frmt, int(bin_str, 2))[chunk]
 
 
-def unpack_sdot(value, index):
-    """ Распаковка данных типа STORED_DOT. """
+def unpack_sdot(value: bytes, index: int) -> float:
+    """Распаковка данных типа STORED_DOT."""
 
+    value = bytearray(value)
     if index is not None:
         del value[-2:]
 
@@ -171,40 +173,43 @@ def unpack_sdot(value, index):
     return (-1) ** sign * 10 ** (-exponent) * mantissa
 
 
-def _encode_dot_u(value):
-    """ Упаковка данных типа DEC_DOTi. """
+def _encode_dot_u(value: float) -> bytes:
+    """Упаковка данных типа DEC_DOTi."""
 
-    length = len(str(int(value)))
-    length = length + 1 if length % 2 else length
-    hexstr = "{:0{}d}".format(value, length)
+    value = int(value)
+    length = len(str(value))
+    length += length % 2
+    hexstr = f"{value:0{length}d}"
 
-    return bytearray(unhexlify(hexstr))
+    return unhexlify(hexstr)
 
 
-def pack_dot0(value):
-    """ Упаковка данных типа DEC_DOT0. """
+def pack_dot0(value: float) -> bytes:
+    """Упаковка данных типа DEC_DOT0."""
 
     return _encode_dot_u(value)
 
 
-def unpack_dot0(value, index):
-    """ Распаковка данных типа DEC_DOT0. """
+def unpack_dot0(value: bytes, index: int) -> int:
+    """Распаковка данных типа DEC_DOT0."""
 
+    value = bytearray(value)
     if index is not None:
         del value[-2:]
 
     return int(hexlify(value).decode())
 
 
-def pack_dot3(value):
-    """ Упаковка данных типа DEC_DOT3. """
+def pack_dot3(value: float) -> bytes:
+    """Упаковка данных типа DEC_DOT3."""
 
     return _encode_dot_u(value * 1000)
 
 
-def unpack_dot3(value, index):
-    """ Распаковка данных типа DEC_DOT3. """
+def unpack_dot3(value: bytes, index: int) -> float:
+    """Распаковка данных типа DEC_DOT3."""
 
+    value = bytearray(value)
     if index is not None:
         del value[-2:]
 
