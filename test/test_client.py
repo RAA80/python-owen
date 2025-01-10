@@ -9,11 +9,11 @@ from pymodbus.register_write_message import WriteMultipleRegistersResponse
 from serial import Serial
 
 from owen.client import ClientMixin, OwenError, OwenModbusClient, OwenSerialClient
-from owen.device import TRM201
+from owen.device import OWEN_DEVICE, TRM201
 
 
 class FakeOwenSerialClient(OwenSerialClient):
-    def __init__(self, transport: Serial, device: dict, unit: int, addr_len_8: bool) -> None:
+    def __init__(self, transport: Serial, device: OWEN_DEVICE, unit: int, addr_len_8: bool) -> None:
         super().__init__(transport, device, unit, addr_len_8=addr_len_8)
 
     def bus_exchange(self, packet: bytes) -> bytes:

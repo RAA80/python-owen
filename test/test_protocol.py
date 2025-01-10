@@ -149,9 +149,8 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertRaises(OwenError, lambda: self.trm.parse_response(b"#GHHINNRQGGGGRUIR\r", b"#GHGJGIJJKNNNRQPUSV\r"))        # if error code
         self.assertRaises(OwenError, lambda: self.trm.parse_response(b"#GHHIUHNTGGGGPULL\r", b"#GHGLUHNTSJKNUMGGGGLPTD\r"))    # if checksum error
         self.assertRaises(OwenError, lambda: self.trm.parse_response(b"#GHHGROTVJNPQ\r", b"#IJKJGIJJJHKOKNIJTO\r"))            # if addresses mismatch
-        self.assertTrue(self.trm.parse_response(b"#GHGLUHNTJVOGGGGGGGQGIG\r", b"#GHGLUHNTJVOGGGGGGGQGIG\r"))
         self.assertIsInstance(self.trm.parse_response(b"#GHHGJONIJKMN\r", b"#GHGHJONIMKKIMP\r"), bytes)
-        self.assertIsInstance(self.trm.parse_response(b"#GHGLUHNTJVOGGGGGGGQGIG\r", b"#GHGLUHNTJVOGGGGGGGQGIG\r"), bool)
+        self.assertIsInstance(self.trm.parse_response(b"#GHGLUHNTJVOGGGGGGGQGIG\r", b"#GHGLUHNTJVOGGGGGGGQGIG\r"), bytes)
 
 
 if __name__ == "__main__":

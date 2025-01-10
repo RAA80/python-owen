@@ -60,9 +60,9 @@ class Owen:
     def name2code(name: str) -> tuple[int, ...]:
         """Преобразование локального идентификатора в числовой код."""
 
-        owen_name: list[int] = reduce(lambda x, ch: [*x[:-1], x[-1] + 1] if ch == "."
-                                      else [*x, OWEN_ASCII[ch]], name.upper(), [])
-        return (*owen_name, *[OWEN_ASCII[" "]] * (4 - len(owen_name)))
+        code: list[int] = reduce(lambda x, ch: [*x[:-1], x[-1] + 1] if ch == "."
+                                 else [*x, OWEN_ASCII[ch]], name.upper(), [])
+        return (*code, *[OWEN_ASCII[" "]] * (4 - len(code)))
 
     @staticmethod
     def encode_frame(frame: tuple[int, ...]) -> bytes:
@@ -75,8 +75,8 @@ class Owen:
     def decode_frame(frame: bytes) -> tuple[int, ...]:
         """Преобразование пакета из строкового вида в числовой."""
 
-        return tuple((i - 71 << 4) + (j - 71 & 0xF)
-                     for i, j in zip(*[iter(frame[1:-1])] * 2))
+        pairs = zip(*[iter(frame[1:-1])] * 2)
+        return tuple((i - 71 << 4) + (j - 71 & 0xF) for i, j in pairs)
 
     @staticmethod
     def pack_value(frmt: str, value: float | str | None) -> tuple[int, ...] | None:
@@ -117,7 +117,7 @@ class Owen:
 
         return packet
 
-    def parse_response(self, packet: bytes, answer: bytes) -> bool | bytes:
+    def parse_response(self, packet: bytes, answer: bytes) -> bytes:
         """Расшифровка прочитанного пакета."""
 
         _logger.debug("Recv frame: %r, size=%d", answer, len(answer))
@@ -146,7 +146,7 @@ class Owen:
             msg = "Network error={:02X}, hash={:02X}{:02X}".format(*data)
             raise OwenError(msg)
 
-        return answer == packet or bytes(data)
+        return bytes(data)
 
 
 __all__ = ["Owen"]

@@ -84,7 +84,7 @@ class OwenSerialClient(ClientMixin):
         return self.socket.read_until(b"\r")
 
     def send_message(self, flag: int, name: str, index: int | None,
-                           data: tuple[int, ...] | None = None) -> bool | bytes:
+                           data: tuple[int, ...] | None = None) -> bytes:
         """Подготовка данных для обмена."""
 
         packet = self._owen.make_packet(flag, name, index, data)
@@ -107,7 +107,7 @@ class OwenSerialClient(ClientMixin):
         index = self.check_index(name, dev, index)
         self.check_value(name, dev, value)
         data = self._owen.pack_value(dev["type"], value)
-        return self.send_message(0, name, index, data)
+        return bool(self.send_message(0, name, index, data))
 
 
 class OwenModbusClient(ClientMixin):
