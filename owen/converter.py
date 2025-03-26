@@ -190,8 +190,14 @@ def pack_dot0(value: float) -> bytes:
     return _encode_dot_u(value)
 
 
-def unpack_dot0(value: bytes, index: int) -> int:
-    """Распаковка данных типа DEC_DOT0."""
+def pack_dot3(value: float) -> bytes:
+    """Упаковка данных типа DEC_DOT3."""
+
+    return _encode_dot_u(value * 1000)
+
+
+def _decode_dot_u(value: bytes, index: int) -> int:
+    """Распаковка данных типа DEC_DOTi."""
 
     value = bytearray(value)
     if index is not None:
@@ -200,20 +206,16 @@ def unpack_dot0(value: bytes, index: int) -> int:
     return int(hexlify(value).decode())
 
 
-def pack_dot3(value: float) -> bytes:
-    """Упаковка данных типа DEC_DOT3."""
+def unpack_dot0(value: bytes, index: int) -> int:
+    """Распаковка данных типа DEC_DOT0."""
 
-    return _encode_dot_u(value * 1000)
+    return _decode_dot_u(value, index)
 
 
 def unpack_dot3(value: bytes, index: int) -> float:
     """Распаковка данных типа DEC_DOT3."""
 
-    value = bytearray(value)
-    if index is not None:
-        del value[-2:]
-
-    return int(hexlify(value).decode()) / 1000.0
+    return _decode_dot_u(value, index) / 1000.0
 
 
 OWEN_TYPE = {"F32+T": {"pack": pack_f32t, "unpack": unpack_f32t},
