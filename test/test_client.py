@@ -9,12 +9,10 @@ from pymodbus.register_write_message import WriteMultipleRegistersResponse
 from serial import Serial
 
 from owen.client import ClientMixin, OwenError, OwenModbusClient, OwenSerialClient
-from owen.device import OWEN_DEVICE, TRM201
+from owen.device import TRM201
 
 
 class FakeOwenSerialClient(OwenSerialClient):
-    def __init__(self, transport: Serial, device: OWEN_DEVICE, unit: int, addr_len_8: bool) -> None:
-        super().__init__(transport, device, unit, addr_len_8=addr_len_8)
 
     def bus_exchange(self, packet: bytes) -> bytes:
         return {b"#GHHGTMOHHRTO\r": b"#GHGMTMOHJHJGJISSTGTIPLKK\r",          # чтение параметра "DEV" тип "STR"
@@ -135,7 +133,7 @@ class TestOwenModbusClient(unittest.TestCase):
         # correct index and value
         value = 20.0
         self.client.modify_value = MagicMock(return_value=value)
-        self.client.socket.write_registers = MagicMock(return_value=WriteMultipleRegistersResponse(1,2))
+        self.client.socket.write_registers = MagicMock(return_value=WriteMultipleRegistersResponse(1, 2))
         self.assertTrue(self.client.set_param(name="SP", index=0, value=value))
         # invalid index
         self.assertRaises(OwenError, lambda: self.client.set_param(name="SP", index=2, value=value))
