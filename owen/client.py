@@ -10,14 +10,14 @@ from typing import TYPE_CHECKING, Callable
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
 
-from .protocol import Owen, OwenError
+from owen.protocol import Owen, OwenError
 
 if TYPE_CHECKING:
     from pymodbus.client.sync import ModbusSerialClient
     from pymodbus.pdu import ModbusResponse
     from serial import Serial
 
-    from .device import MODBUS_PARAMS, OWEN_DEVICE, OWEN_PARAMS
+    from owen.device import MODBUS_PARAMS, OWEN_DEVICE, OWEN_PARAMS
 
 
 class ClientMixin:
@@ -84,7 +84,7 @@ class OwenSerialClient(ClientMixin):
         return self.socket.read_until(b"\r")
 
     def send_message(self, flag: int, name: str, index: int | None,
-                           data: tuple[int, ...] | None = None) -> bytes:
+                           data: bytes = b"") -> bytes:
         """Подготовка данных для обмена."""
 
         packet = self._owen.make_packet(flag, name, index, data)

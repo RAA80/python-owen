@@ -156,16 +156,12 @@ def pack_sdot(value: float) -> bytes:
 def unpack_sdot(value: bytes, index: int) -> float:
     """Распаковка данных типа STORED_DOT."""
 
-    value = bytearray(value)
     if index is not None:
-        del value[-2:]
+        value = value[:-2]
 
-    arg, shift = {1: ((">B", value), 4),
-                  2: ((">H", value), 12),
-                  3: ((">I", b"\x00" + value), 20),
-                 }[len(value)]
+    data = int.from_bytes(value, "big")
+    shift = len(value) * 8 - 4
 
-    data = unpack(*arg)[0]
     sign = data >> (shift + 3) & 1
     exponent = data >> shift & 7
     mantissa = data & (2 ** shift - 1)
@@ -199,9 +195,8 @@ def pack_dot3(value: float) -> bytes:
 def _decode_dot_u(value: bytes, index: int) -> int:
     """Распаковка данных типа DEC_DOTi."""
 
-    value = bytearray(value)
     if index is not None:
-        del value[-2:]
+        value = value[:-2]
 
     return int(hexlify(value).decode())
 

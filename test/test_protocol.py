@@ -82,24 +82,24 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertIsInstance(self.trm.decode_frame(b"#GHGHHUILHKNUGM\r"), tuple)
 
     def test_pack_value(self) -> None:
-        self.assertEqual((194, 71, 255, 167, 15, 225), self.trm.pack_value("F32+T", (-49.99966049194336, 4065)))
-        self.assertEqual((66, 246, 233, 223), self.trm.pack_value("F32", 123.45678))
-        self.assertEqual((164, 14), self.trm.pack_value("SDOT", -10.38))
-        self.assertEqual((29, 172), self.trm.pack_value("SDOT", 350.0))
-        self.assertEqual((16, 16, 4), self.trm.pack_value("SDOT", 410.0))
-        self.assertEqual((16,), self.trm.pack_value("SDOT", 0.0))
-        self.assertEqual((0,), self.trm.pack_value("DOT0", 0))
-        self.assertEqual((153,), self.trm.pack_value("DOT0", 99))
-        self.assertEqual((3, 4), self.trm.pack_value("DOT0", 304))
-        self.assertEqual((9, 135, 101, 67, 33), self.trm.pack_value("DOT0", 987654321))
-        self.assertEqual((66, 246, 233), self.trm.pack_value("F24", 123.45678))
-        self.assertEqual((4, 210), self.trm.pack_value("U16", 1234))
-        self.assertEqual((251, 46), self.trm.pack_value("I16", -1234))
-        self.assertEqual((12,), self.trm.pack_value("U8", 12))
-        self.assertEqual((244,), self.trm.pack_value("I8", -12))
-        self.assertEqual((50, 48, 50, 204, 208, 210), self.trm.pack_value("STR", "ТРМ202"))
-        self.assertIsNone(self.trm.pack_value("U8", None))          # if empty buffer
-        self.assertIsInstance(self.trm.pack_value("I8", -12), tuple)
+        self.assertEqual(bytes([194, 71, 255, 167, 15, 225]), self.trm.pack_value("F32+T", (-49.99966049194336, 4065)))
+        self.assertEqual(bytes([66, 246, 233, 223]), self.trm.pack_value("F32", 123.45678))
+        self.assertEqual(bytes([164, 14]), self.trm.pack_value("SDOT", -10.38))
+        self.assertEqual(bytes([29, 172]), self.trm.pack_value("SDOT", 350.0))
+        self.assertEqual(bytes([16, 16, 4]), self.trm.pack_value("SDOT", 410.0))
+        self.assertEqual(bytes([16]), self.trm.pack_value("SDOT", 0.0))
+        self.assertEqual(bytes([0]), self.trm.pack_value("DOT0", 0))
+        self.assertEqual(bytes([153]), self.trm.pack_value("DOT0", 99))
+        self.assertEqual(bytes([3, 4]), self.trm.pack_value("DOT0", 304))
+        self.assertEqual(bytes([9, 135, 101, 67, 33]), self.trm.pack_value("DOT0", 987654321))
+        self.assertEqual(bytes([66, 246, 233]), self.trm.pack_value("F24", 123.45678))
+        self.assertEqual(bytes([4, 210]), self.trm.pack_value("U16", 1234))
+        self.assertEqual(bytes([251, 46]), self.trm.pack_value("I16", -1234))
+        self.assertEqual(bytes([12]), self.trm.pack_value("U8", 12))
+        self.assertEqual(bytes([244]), self.trm.pack_value("I8", -12))
+        self.assertEqual(bytes([50, 48, 50, 204, 208, 210]), self.trm.pack_value("STR", "ТРМ202"))
+        self.assertEqual(b"", self.trm.pack_value("U8", None))      # if empty buffer
+        self.assertIsInstance(self.trm.pack_value("I8", -12), bytes)
 
     def test_unpack_value(self) -> None:
         self.assertEqual((-49.99966049194336, 4065), self.trm.unpack_value("F32+T", bytes([194, 71, 255, 167, 15, 225]), None))
@@ -113,6 +113,7 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual(0, self.trm.unpack_value("DOT0", bytes([0]), None))
         self.assertEqual(99, self.trm.unpack_value("DOT0", bytes([153]), None))
         self.assertEqual(304, self.trm.unpack_value("DOT0", bytes([3, 4]), None))
+        self.assertEqual(304, self.trm.unpack_value("DOT0", bytes([3, 4, 0, 0]), 0))
         self.assertEqual(987654321, self.trm.unpack_value("DOT0", bytes([9, 135, 101, 67, 33]), None))
         self.assertEqual(123.455078125, self.trm.unpack_value("F24", bytes([66, 246, 233]), None))
         self.assertEqual((71, 46059), self.trm.unpack_value("U24", bytes([71, 179, 235]), None))
@@ -124,17 +125,17 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertRaises(OwenError, lambda: self.trm.unpack_value("F32", bytes([253]), None))  # if error code
 
     def test_make_packet(self) -> None:
-        self.assertEqual(b"#GHHGHUTIKGJI\r", self.trm.make_packet(1, "A.LEN", None, None))
-        self.assertEqual(b"#GHHISOOGGGGGQSUR\r", self.trm.make_packet(1, "DON", 0, None))
-        self.assertEqual(b"#GHGLJPVJGGGGGGGGGGGRJJ\r", self.trm.make_packet(0, "FB", 0, (0, 0, 0)))
-        self.assertEqual(b"#GHGLUHNTSJKNUMGGGGLPTV\r", self.trm.make_packet(0, "SL.L", 0, (195, 71, 230)))
-        self.assertEqual(b"#GHGHRNIUGGMJSQ\r", self.trm.make_packet(0, "SBIT", None, (0,)))
-        self.assertEqual(b"#GHGLPHGNKHSOGGGGGGJOMV\r", self.trm.make_packet(0, "SP", 0, (65, 200, 0)))
-        self.assertEqual(b"#GHGHRNMGGORMUL\r", self.trm.make_packet(0, "BPS", None, (8,)))
+        self.assertEqual(b"#GHHGHUTIKGJI\r", self.trm.make_packet(1, "A.LEN", None, b""))
+        self.assertEqual(b"#GHHISOOGGGGGQSUR\r", self.trm.make_packet(1, "DON", 0, b""))
+        self.assertEqual(b"#GHGLJPVJGGGGGGGGGGGRJJ\r", self.trm.make_packet(0, "FB", 0, bytes([0, 0, 0])))
+        self.assertEqual(b"#GHGLUHNTSJKNUMGGGGLPTV\r", self.trm.make_packet(0, "SL.L", 0, bytes([195, 71, 230])))
+        self.assertEqual(b"#GHGHRNIUGGMJSQ\r", self.trm.make_packet(0, "SBIT", None, bytes([0])))
+        self.assertEqual(b"#GHGLPHGNKHSOGGGGGGJOMV\r", self.trm.make_packet(0, "SP", 0, bytes([65, 200, 0])))
+        self.assertEqual(b"#GHGHRNMGGORMUL\r", self.trm.make_packet(0, "BPS", None, bytes([8])))
 
-        self.assertEqual(b"#JIHIPHGNGGGGJHVJ\r", self.trm11.make_packet(1, "SP", 0, None))
-        self.assertEqual(b"#JIGLPHGNKHRHPQGGGGUMHO\r", self.trm11.make_packet(0, "SP", 0, (65, 177, 154)))
-        self.assertIsInstance(self.trm11.make_packet(0, "SP", 0, (65, 177, 154)), bytes)
+        self.assertEqual(b"#JIHIPHGNGGGGJHVJ\r", self.trm11.make_packet(1, "SP", 0, b""))
+        self.assertEqual(b"#JIGLPHGNKHRHPQGGGGUMHO\r", self.trm11.make_packet(0, "SP", 0, bytes([65, 177, 154])))
+        self.assertIsInstance(self.trm11.make_packet(0, "SP", 0, bytes([65, 177, 154])), bytes)
 
     def test_parse_response(self) -> None:
         self.assertEqual(bytes([0]), self.trm.parse_response(b"#GHHGHUTIKGJI\r", b"#GHGHHUTIGGJKGK\r"))

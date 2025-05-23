@@ -75,7 +75,7 @@ class TestClientMixin(unittest.TestCase):
 class TestOwenSerialClient(unittest.TestCase):
     """The unittest for OwenSerialClient."""
 
-    @patch("serial.Serial")
+    @patch("serial.Serial", autospec=True)
     def setUp(self, mock_serial: Serial) -> None:
         self.client = FakeOwenSerialClient(transport=mock_serial, device=TRM201,
                                            unit=1, addr_len_8=True)
@@ -113,7 +113,7 @@ class TestOwenSerialClient(unittest.TestCase):
 class TestOwenModbusClient(unittest.TestCase):
     """The unittest for OwenModbusClient."""
 
-    @patch("pymodbus.client.sync.ModbusSerialClient")
+    @patch("pymodbus.client.sync.ModbusSerialClient", autospec=True)
     def setUp(self, mock_modbus: ModbusSerialClient) -> None:
         self.client = OwenModbusClient(transport=mock_modbus, device=TRM201, unit=1)
 

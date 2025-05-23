@@ -8,7 +8,7 @@ import logging
 from functools import reduce
 from struct import error, unpack
 
-from .converter import OWEN_TYPE
+from owen.converter import OWEN_TYPE
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
@@ -79,10 +79,10 @@ class Owen:
         return tuple((i - 71 << 4) + (j - 71 & 0xF) for i, j in pairs)
 
     @staticmethod
-    def pack_value(frmt: str, value: float | str | None) -> tuple[int, ...] | None:
+    def pack_value(frmt: str, value: float | str | None) -> bytes:
         """Упаковка данных заданного формата."""
 
-        return None if value is None else tuple(OWEN_TYPE[frmt]["pack"](value))
+        return b"" if value is None else OWEN_TYPE[frmt]["pack"](value)
 
     @staticmethod
     def unpack_value(frmt: str, value: bytes, index: int | None) -> float | str:
@@ -92,18 +92,17 @@ class Owen:
             return OWEN_TYPE[frmt]["unpack"](value, index)
         except error:
             errcode = OWEN_TYPE["U8"]["unpack"](value, index)
-            msg = f"errorcode = {errcode:02X}"
+            msg = f"Device error={errcode:02X}"
             raise OwenError(msg) from None
 
     def make_packet(self, flag: int, name: str, index: int | None,
-                          data: tuple[int, ...] | None = None) -> bytes:
+                          data: bytes) -> bytes:
         """Формирование пакета для записи."""
 
         addr0, addr1 = (self.unit & 0xFF, 0) if self.addr_len_8 else \
                        (self.unit >> 3 & 0xFF, (self.unit & 0x07) << 5)
-        data = data or ()
         if index is not None:
-            data = (*data, *index.to_bytes(2, "big"))
+            data = bytes([*data, *index.to_bytes(2, "big")])
 
         cmd = self.owen_hash(self.name2code(name))
         frame = (addr0, addr1 | flag << 4 | len(data), *cmd.to_bytes(2, "big"), *data)
@@ -112,7 +111,7 @@ class Owen:
 
         _logger.debug("Send param: address=%d, flag=%d, size=%d, cmd=%04X, "
                       "index=%s, data=%s, crc=%04X", self.unit, flag, len(data),
-                      cmd, index, data, crc)
+                      cmd, index, tuple(data), crc)
         _logger.debug("Send frame: %r, size=%d", packet, len(packet))
 
         return packet
