@@ -1,0 +1,72 @@
+#! /usr/bin/env python3
+
+"""Таблица настроек измерителя-ПИД-регулятора ТРМ101."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from owen.device._types import DEVICE
+
+TRM101: DEVICE = {
+    "owen": {"PV":    {"type": "F24", "index": {None: None}},
+             "SP":    {"type": "F24", "index": {None: None}},
+             "R-S":   {"type":  "U8", "index": {None: None}},
+             "AT":    {"type":  "U8", "index": {None: None}},
+             "O":     {"type": "F24", "index": {None: None}},
+             "IN-T":  {"type":  "U8", "index": {None: None}},
+             "DPT":   {"type":  "U8", "index": {None: None}},
+             "DP":    {"type":  "U8", "index": {None: None}},
+             "IN-L":  {"type": "F24", "index": {None: None}},
+             "IN-H":  {"type": "F24", "index": {None: None}},
+             "SL-L":  {"type": "F24", "index": {None: None}},
+             "SL-H":  {"type": "F24", "index": {None: None}},
+             "SH":    {"type": "F24", "index": {None: None}},
+             "KU":    {"type": "F24", "index": {None: None}},
+             "INF":   {"type": "F24", "index": {None: None}},
+             "FB":    {"type": "F24", "index": {None: None}},
+             "AN-L":  {"type": "F24", "index": {None: None}},
+             "AN-H":  {"type": "F24", "index": {None: None}},
+             "EV-1":  {"type":  "U8", "index": {None: None}},
+             "ALT":   {"type":  "U8", "index": {None: None}},
+             "AL-D":  {"type": "F24", "index": {None: None}},
+             "AL-H":  {"type": "F24", "index": {None: None}},
+             "OREU":  {"type":  "U8", "index": {None: None}},
+             "CP":    {"type":  "U8", "index": {None: None}},
+             "VSP":   {"type": "F24", "index": {None: None}},
+             "CNTL":  {"type":  "U8", "index": {None: None}},
+             "HYST":  {"type": "F24", "index": {None: None}},
+             "ONST":  {"type":  "U8", "index": {None: None}},
+             "ONER":  {"type":  "U8", "index": {None: None}},
+             "RAMP":  {"type":  "U8", "index": {None: None}},
+             "P":     {"type": "F24", "index": {None: None}},
+             "I":     {"type": "F24", "index": {None: None}},
+             "D":     {"type": "F24", "index": {None: None}},
+             "DB":    {"type": "F24", "index": {None: None}},
+             "OL-L":  {"type": "F24", "index": {None: None}},
+             "OL-H":  {"type": "F24", "index": {None: None}},
+             "ORL":   {"type": "F24", "index": {None: None}},
+             "MVER":  {"type": "F24", "index": {None: None}},
+             "MVST":  {"type": "F24", "index": {None: None}},
+             "MDST":  {"type":  "U8", "index": {None: None}},
+             "LBA":   {"type": "U16", "index": {None: None}},
+             "LBAB":  {"type": "F24", "index": {None: None}},
+             "ADDR":  {"type": "U16", "index": {None: None}},
+             "RSDL":  {"type":  "U8", "index": {None: None}},
+             "A.LEN": {"type":  "U8", "index": {None: None}},
+             "BPS":   {"type":  "U8", "index": {None: None}},
+             "LEN":   {"type":  "U8", "index": {None: None}},
+             "PRTY":  {"type":  "U8", "index": {None: None}},
+             "SBIT":  {"type":  "U8", "index": {None: None}},
+             "VER":   {"type": "STR", "index": {None: None}},
+             "DEV":   {"type": "STR", "index": {None: None}},
+             "APLY":  {"type":  "U8", "index": {None: None}},
+             "INIT":  {"type":  "U8", "index": {None: None}},
+             "N.ERR": {"type": "U24", "index": {None: None}},
+             "ATTR":  {"type":  "U8", "index": {None: None}},
+             "O-ED":  {"type": "F24", "index": {None: None}},
+             "O.":    {"type": "F24", "index": {None: None}},
+             "EDPT":  {"type":  "U8", "index": {None: None}},
+            },
+}

@@ -1,0 +1,83 @@
+#! /usr/bin/env python3
+
+"""Таблица настроек измерителя двухканального ТРМ200."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from pymodbus.constants import Endian
+
+if TYPE_CHECKING:
+    from owen.device._types import DEVICE
+
+TRM200: DEVICE = {
+    "owen": {"PV":    {"type": "F24", "index": {None: None}},
+             "LUPV":  {"type": "F24", "index": {None: None}},
+             "IN.T":  {"type":  "U8", "index": {0: 0, 1: 1}},
+             "DPT":   {"type":  "U8", "index": {0: 0, 1: 1}},
+             "DP":    {"type":  "U8", "index": {0: 0, 1: 1}},
+             "IN.L":  {"type": "F24", "index": {0: 0, 1: 1}},
+             "IN.H":  {"type": "F24", "index": {0: 0, 1: 1}},
+             "SQR":   {"type":  "U8", "index": {0: 0, 1: 1}},
+             "ILU":   {"type":  "U8", "index": {0: 0, 1: 1}},
+             "SH":    {"type": "F24", "index": {0: 0, 1: 1}},
+             "KU":    {"type": "F24", "index": {0: 0, 1: 1}},
+             "FB":    {"type": "F24", "index": {0: 0, 1: 1}},
+             "INF":   {"type": "F24", "index": {0: 0, 1: 1}},
+             "REST":  {"type":  "U8", "index": {None: None}},
+             "PROT":  {"type":  "U8", "index": {None: None}},
+             "BPS":   {"type":  "U8", "index": {None: None}},
+             "A.LEN": {"type":  "U8", "index": {None: None}},
+             "ADDR":  {"type": "U16", "index": {None: None}},
+             "RSDL":  {"type":  "U8", "index": {None: None}},
+             "LEN":   {"type":  "U8", "index": {None: None}},
+             "PRTY":  {"type":  "U8", "index": {None: None}},
+             "SBIT":  {"type":  "U8", "index": {None: None}},
+             "VER":   {"type": "STR", "index": {None: None}},
+             "DEV":   {"type": "STR", "index": {None: None}},
+             "PRTL":  {"type":  "U8", "index": {None: None}},
+             "APLY":  {"type":  "U8", "index": {None: None}},
+             "INIT":  {"type":  "U8", "index": {None: None}},
+             "N.ERR": {"type": "U24", "index": {None: None}},
+             "ATTR":  {"type":  "U8", "index": {None: None}},
+             "OAPT":  {"type":  "U8", "index": {None: None}},
+             "WTPT":  {"type":  "U8", "index": {None: None}},
+             "EDPT":  {"type":  "U8", "index": {None: None}},
+            },
+    "modbus": {"STAT":  {"type":  "U16", "index": {None: 0x0000}, "dp": None, "precision": 0},
+               "DEV":   {"type": "STR8", "index": {None: 0x1000}, "dp": None, "precision": 0},
+               "VER":   {"type": "STR8", "index": {None: 0x1004}, "dp": None, "precision": 0},
+               "PROT":  {"type":  "U16", "index": {None: 0x0100}, "dp": None, "precision": 0},
+               "BPS":   {"type":  "U16", "index": {None: 0x0101}, "dp": None, "precision": 0},
+               "A.LEN": {"type":  "U16", "index": {None: 0x0102}, "dp": None, "precision": 0},
+               "ADDR":  {"type":  "U16", "index": {None: 0x0103}, "dp": None, "precision": 0},
+               "RSDL":  {"type":  "U16", "index": {None: 0x0104}, "dp": None, "precision": 0},
+               "LEN":   {"type":  "U16", "index": {None: 0x0105}, "dp": None, "precision": 0},
+               "PRTY":  {"type":  "U16", "index": {None: 0x0106}, "dp": None, "precision": 0},
+               "SBIT":  {"type":  "U16", "index": {None: 0x0107}, "dp": None, "precision": 0},
+               "N.ERR": {"type":  "U16", "index": {None: 0x0108}, "dp": None, "precision": 0},
+               "PRTL":  {"type":  "U16", "index": {None: 0x0109}, "dp": None, "precision": 0},
+               "APLY":  {"type":  "U16", "index": {None: 0x010A}, "dp": None, "precision": 0},
+               "INIT":  {"type":  "U16", "index": {None: 0x010B}, "dp": None, "precision": 0},
+               "REST":  {"type":  "U16", "index": {None: 0x0300}, "dp": None, "precision": 0},
+               "OAPT":  {"type":  "U16", "index": {None: 0x0700}, "dp": None, "precision": 0},
+               "WTPT":  {"type":  "U16", "index": {None: 0x0701}, "dp": None, "precision": 0},
+               "EDPT":  {"type":  "U16", "index": {None: 0x0702}, "dp": None, "precision": 0},
+               "PV":    {"type":  "F32", "index": {0: 0x1009, 1: 0x100B}, "dp": None, "precision": 0},
+               "LUPV":  {"type":  "F32", "index": {0: 0x100D, 1: 0x100F}, "dp": None, "precision": 0},
+               "IN.T":  {"type":  "U16", "index": {0: 0x0200, 1: 0x020B}, "dp": None, "precision": 0},
+               "DPT":   {"type":  "U16", "index": {0: 0x0201, 1: 0x020C}, "dp": None, "precision": 0},
+               "DP":    {"type":  "U16", "index": {0: 0x0202, 1: 0x020D}, "dp": None, "precision": 0},
+               "IN.L":  {"type":  "I16", "index": {0: 0x0203, 1: 0x020E}, "dp": "DP", "precision": 0},
+               "IN.H":  {"type":  "I16", "index": {0: 0x0204, 1: 0x020F}, "dp": "DP", "precision": 0},
+               "SH":    {"type":  "I16", "index": {0: 0x0205, 1: 0x0210}, "dp": "DP", "precision": 0},
+               "KU":    {"type":  "U16", "index": {0: 0x0206, 1: 0x0211}, "dp": None, "precision": 3},
+               "FB":    {"type":  "U16", "index": {0: 0x0207, 1: 0x0212}, "dp": "DP", "precision": 0},
+               "INF":   {"type":  "U16", "index": {0: 0x0208, 1: 0x0213}, "dp": None, "precision": 0},
+               "SQR":   {"type":  "U16", "index": {0: 0x0209, 1: 0x0214}, "dp": None, "precision": 0},
+               "ILU":   {"type":  "U16", "index": {0: 0x020A, 1: 0x0215}, "dp": None, "precision": 0},
+              },
+    "byteorder": Endian.Big,
+    "wordorder": Endian.Big,
+}

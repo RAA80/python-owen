@@ -1,14 +1,20 @@
 #! /usr/bin/env python3
 
-"""Реализация протокола взаимодействия ОВЕН."""
+"""Реализация класса для работы по протоколу ОВЕН."""
 
 from __future__ import annotations
 
 import logging
 from functools import reduce
 from struct import error, unpack
+from typing import TYPE_CHECKING
 
-from owen.converter import OWEN_TYPE
+from owen.exception import OwenError
+from owen.owen.converter import OWEN_TYPE
+
+if TYPE_CHECKING:
+    from owen.device._types import DEVICE, OWEN
+
 
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
@@ -26,18 +32,37 @@ OWEN_ASCII = {"0":  0, "1":  2, "2":  4, "3":  6, "4":  8,
               "Z": 70, "-": 72, "_": 74, "/": 76, " ": 78}
 
 
-class OwenError(Exception):
-    pass
-
-
 class Owen:
     """Класс, описывающий протокол ОВЕН."""
 
-    def __init__(self, unit: int, addr_len_8: bool) -> None:
-        """Инициализация класса клиента с указанными параметрами."""
+    def __init__(self, unit: int, device: DEVICE, addr_len_8: bool) -> None:
+        """Инициализация класса, описывающего протокол ОВЕН."""
 
         self.unit = unit
+        self.device = device["owen"]
         self.addr_len_8 = addr_len_8
+
+    def read(self) -> bytes:
+        """Чтение данных."""
+
+        raise NotImplementedError
+
+    def write(self, packet: bytes) -> int | None:
+        """Запись данных."""
+
+        raise NotImplementedError
+
+    @staticmethod
+    def check_index(name: str, dev: OWEN, index: int | None) -> int | None:
+        """Проверка индекса."""
+
+        if not index:
+            index = None if None in dev["index"] else 0
+        if index not in dev["index"]:
+            msg = f"'{name}' does not support index '{index}'"
+            raise OwenError(msg)
+
+        return index
 
     @staticmethod
     def fast_calc(value: int, crc: int, bits: int) -> int:
@@ -139,7 +164,7 @@ class Owen:
             msg = "Checksum error"
             raise OwenError(msg)
         if address != self.unit:
-            msg = "Sender and receiver addresses mismatch"
+            msg = "Addresses mismatch"
             raise OwenError(msg)
         if packet[7:9] != answer[7:9]:      # hash mismatch
             msg = "Network error={:02X}, hash={:02X}{:02X}".format(*data)
@@ -147,5 +172,28 @@ class Owen:
 
         return bytes(data)
 
+    def send_message(self, flag: int, name: str, index: int | None,
+                           data: bytes = b"") -> bytes:
+        """Подготовка данных для обмена."""
 
-__all__ = ["Owen"]
+        packet = self.make_packet(flag, name, index, data)
+        self.write(packet=packet)
+        answer = self.read()
+        return self.parse_response(packet, answer)
+
+    def get_param(self, name: str, index: int | None = None) -> float | str:
+        """Чтение данных из устройства."""
+
+        dev = self.device[name]
+        index = self.check_index(name, dev, index)
+        result = self.send_message(1, name, index)
+        return self.unpack_value(dev["type"], result, index)
+
+    def set_param(self, name: str, index: int | None = None,
+                        value: float | str | None = None) -> bool:
+        """Запись данных в устройство."""
+
+        dev = self.device[name]
+        index = self.check_index(name, dev, index)
+        data = self.pack_value(dev["type"], value)
+        return bool(self.send_message(0, name, index, data))

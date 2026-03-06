@@ -1,0 +1,87 @@
+#! /usr/bin/env python3
+
+"""Таблица настроек измерителя-регулятора микропроцессорного двухканального 2ТРМ1."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from pymodbus.constants import Endian
+
+if TYPE_CHECKING:
+    from owen.device._types import DEVICE
+
+_2TRM1: DEVICE = {
+    "modbus": {"STAT":        {"type":  "U16", "index": {None: 0x1008}, "dp": None, "precision": 0},
+               "DEV":         {"type": "STR8", "index": {None: 0x1000}, "dp": None, "precision": 0},
+               "VER":         {"type": "STR8", "index": {None: 0x1004}, "dp": None, "precision": 0},
+               "CTRL":        {"type":  "U16", "index": {None: 0x1019}, "dp": None, "precision": 0},
+               "RESET":       {"type":  "U16", "index": {None: 0x101A}, "dp": None, "precision": 0},
+               "OUT.S":       {"type":  "U16", "index": {None: 0x0406}, "dp": None, "precision": 0},
+               "RET.T":       {"type":  "U16", "index": {None: 0x0407}, "dp": None, "precision": 0},
+               "CHG.T":       {"type":  "U16", "index": {None: 0x0408}, "dp": None, "precision": 0},
+               "PROT":        {"type":  "U16", "index": {None: 0x0500}, "dp": None, "precision": 0},
+               "ADDR":        {"type":  "U16", "index": {None: 0x0501}, "dp": None, "precision": 0},
+               "BAUD":        {"type":  "U16", "index": {None: 0x0502}, "dp": None, "precision": 0},
+               "DPS":         {"type":  "U16", "index": {None: 0x0503}, "dp": None, "precision": 0},
+               "IDLE":        {"type":  "U16", "index": {None: 0x0504}, "dp": None, "precision": 0},
+               "B.ORD":       {"type":  "U16", "index": {None: 0x0505}, "dp": None, "precision": 0},
+               "APLY":        {"type":  "U16", "index": {None: 0x0506}, "dp": None, "precision": 0},
+               "GRF.N":       {"type":  "U16", "index": {None: 0x0600}, "dp": None, "precision": 0},
+               "PASS":        {"type":  "U16", "index": {None: 0x0800}, "dp": None, "precision": 0},
+               "PRT.E":       {"type":  "U16", "index": {None: 0x0801}, "dp": None, "precision": 0},
+               "ATR.E":       {"type":  "U16", "index": {None: 0x0802}, "dp": None, "precision": 0},
+               "CJS.E":       {"type":  "U16", "index": {None: 0x0803}, "dp": None, "precision": 0},
+               "PV":          {"type":  "F32", "index": {0: 0x1009, 1: 0x100B}, "dp": None, "precision": 0},
+               "FUN":         {"type":  "F32", "index": {0: 0x100D, 1: 0x100F}, "dp": None, "precision": 0},
+               "SP":          {"type":  "F32", "index": {0: 0x1011, 1: 0x1013}, "dp": None, "precision": 0},
+               "OUT.P":       {"type":  "F32", "index": {0: 0x1015, 1: 0x1017}, "dp": None, "precision": 0},
+               "TYPE":        {"type":  "U16", "index": {0: 0x0004, 1: 0x0104}, "dp": None, "precision": 0},
+               "FIL.B":       {"type":  "F32", "index": {0: 0x0005, 1: 0x0105}, "dp": None, "precision": 0},
+               "FIL.T":       {"type":  "U16", "index": {0: 0x0007, 1: 0x0107}, "dp": None, "precision": 0},
+               "DPT":         {"type":  "U16", "index": {0: 0x0008, 1: 0x0108}, "dp": None, "precision": 0},
+               "IND.L":       {"type":  "F32", "index": {0: 0x0009, 1: 0x0109}, "dp": None, "precision": 0},
+               "IND.H":       {"type":  "F32", "index": {0: 0x000B, 1: 0x010B}, "dp": None, "precision": 0},
+               "CF":          {"type":  "F32", "index": {0: 0x000E, 1: 0x0010}, "dp": None, "precision": 0},
+               "DIN.T":       {"type":  "U16", "index": {0: 0x0012, 1: 0x0112}, "dp": None, "precision": 0},
+               "DIN.D":       {"type":  "F32", "index": {0: 0x0013, 1: 0x0113}, "dp": None, "precision": 0},
+               "BARR":        {"type":  "U16", "index": {0: 0x0015, 1: 0x0115}, "dp": None, "precision": 0},
+               "COR1.POINT":  {"type":  "F32", "index": {0: 0x0016, 1: 0x0116}, "dp": None, "precision": 0},
+               "COR1.OFFSET": {"type":  "F32", "index": {0: 0x0018, 1: 0x0118}, "dp": None, "precision": 0},
+               "COR1.CLR":    {"type":  "U16", "index": {0: 0x001A, 1: 0x011A}, "dp": None, "precision": 0},
+               "COR2.POINT":  {"type":  "F32", "index": {0: 0x001B, 1: 0x011B}, "dp": None, "precision": 0},
+               "COR2.OFFSET": {"type":  "F32", "index": {0: 0x001D, 1: 0x011D}, "dp": None, "precision": 0},
+               "COR2.CLR":    {"type":  "U16", "index": {0: 0x001F, 1: 0x011F}, "dp": None, "precision": 0},
+               "COR3.POINT":  {"type":  "F32", "index": {0: 0x0020, 1: 0x0120}, "dp": None, "precision": 0},
+               "COR3.OFFSET": {"type":  "F32", "index": {0: 0x0022, 1: 0x0122}, "dp": None, "precision": 0},
+               "COR3.CLR":    {"type":  "U16", "index": {0: 0x0024, 1: 0x0124}, "dp": None, "precision": 0},
+               "SP.LO":       {"type":  "F32", "index": {0: 0x0202, 1: 0x0302}, "dp": None, "precision": 0},
+               "SP.HI":       {"type":  "F32", "index": {0: 0x0204, 1: 0x0304}, "dp": None, "precision": 0},
+               "LBA.T":       {"type":  "U16", "index": {0: 0x0208, 1: 0x0308}, "dp": None, "precision": 0},
+               "LBA.B":       {"type":  "F32", "index": {0: 0x0209, 1: 0x0309}, "dp": None, "precision": 0},
+               "LOG.D":       {"type":  "U16", "index": {0: 0x0220, 1: 0x0320}, "dp": None, "precision": 0},
+               "HYST":        {"type":  "F32", "index": {0: 0x0221, 1: 0x0321}, "dp": None, "precision": 0},
+               "D.ON":        {"type":  "U16", "index": {0: 0x0223, 1: 0x0323}, "dp": None, "precision": 0},
+               "D.OFF":       {"type":  "U16", "index": {0: 0x0224, 1: 0x0324}, "dp": None, "precision": 0},
+               "H.ON":        {"type":  "U16", "index": {0: 0x0225, 1: 0x0325}, "dp": None, "precision": 0},
+               "H.OFF":       {"type":  "U16", "index": {0: 0x0226, 1: 0x0326}, "dp": None, "precision": 0},
+               "CNT.P":       {"type":  "U16", "index": {0: 0x0227, 1: 0x0327}, "dp": None, "precision": 0},
+               "ERR.D":       {"type":  "U16", "index": {0: 0x0228, 1: 0x0328}, "dp": None, "precision": 0},
+               "STP.D":       {"type":  "U16", "index": {0: 0x0229, 1: 0x0329}, "dp": None, "precision": 0},
+               "A.TYP":       {"type":  "U16", "index": {0: 0x0240, 1: 0x0340}, "dp": None, "precision": 0},
+               "A.BND":       {"type":  "F32", "index": {0: 0x0241, 1: 0x0341}, "dp": None, "precision": 0},
+               "A.HYS":       {"type":  "F32", "index": {0: 0x0243, 1: 0x0343}, "dp": None, "precision": 0},
+               "F.BLC":       {"type":  "U16", "index": {0: 0x0245, 1: 0x0345}, "dp": None, "precision": 0},
+               "LOG.A":       {"type":  "U16", "index": {0: 0x0260, 1: 0x0360}, "dp": None, "precision": 0},
+               "XP":          {"type":  "F32", "index": {0: 0x0261, 1: 0x0361}, "dp": None, "precision": 0},   # в документации HYST, но HYST уже есть
+               "OUT.L":       {"type":  "F32", "index": {0: 0x0263, 1: 0x0363}, "dp": None, "precision": 0},
+               "OUT.H":       {"type":  "F32", "index": {0: 0x0265, 1: 0x0365}, "dp": None, "precision": 0},
+               "ERR.A":       {"type":  "U16", "index": {0: 0x0267, 1: 0x0367}, "dp": None, "precision": 0},
+               "STP.A":       {"type":  "U16", "index": {0: 0x0268, 1: 0x0368}, "dp": None, "precision": 0},
+               "SCR":         {"type":  "U16", "index": {0: 0x0400, 1: 0x0401, 2: 0x0402, 3: 0x0403, 4: 0x0404, 5: 0x0405}, "dp": None, "precision": 0},
+               "IN.":         {"type":  "F32", "index": {0: 0x0601, 1: 0x0605, 2: 0x0609, 3: 0x060D, 4: 0x0611, 5: 0x0615, 6: 0x0619, 7: 0x061D, 8: 0x0621, 9: 0x0625}, "dp": None, "precision": 0},
+               "SP.":         {"type":  "F32", "index": {0: 0x0603, 1: 0x0607, 2: 0x060B, 3: 0x060F, 4: 0x0613, 5: 0x0617, 6: 0x061B, 7: 0x061F, 8: 0x0623, 9: 0x0627}, "dp": None, "precision": 0},
+              },
+    "byteorder": Endian.Big,
+    "wordorder": Endian.Big,
+}

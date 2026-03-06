@@ -1,16 +1,22 @@
 #! /usr/bin/env python3
 
 import unittest
+from unittest.mock import MagicMock
 
-from owen.protocol import Owen, OwenError
+from owen.device import TRM201
+from owen.exception import OwenError
+from owen.modbus.protocol import Modbus
+from owen.owen.protocol import Owen
+from pymodbus.pdu import ModbusResponse
+from pymodbus.register_write_message import WriteMultipleRegistersResponse
 
 
 class TestOwenProtocol(unittest.TestCase):
     """The unittest for Owen protocol."""
 
     def setUp(self) -> None:
-        self.trm = Owen(unit=1, addr_len_8=True)
-        self.trm11 = Owen(unit=400, addr_len_8=False)
+        self.trm = Owen(unit=1, device=TRM201, addr_len_8=True)
+        self.trm11 = Owen(unit=400, device=TRM201, addr_len_8=False)
 
     def tearDown(self) -> None:
         del self.trm
@@ -97,6 +103,8 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual(bytes([251, 46]), self.trm.pack_value("I16", -1234))
         self.assertEqual(bytes([12]), self.trm.pack_value("U8", 12))
         self.assertEqual(bytes([244]), self.trm.pack_value("I8", -12))
+        self.assertEqual(bytes([0, 0, 16, 2, 3, 5]), self.trm.pack_value("CLK", (10, 2, 3, 5)))
+        self.assertEqual(bytes([18, 52, 86, 50, 72, 87]), self.trm.pack_value("CLK", (123456, 32, 48, 57)))
         self.assertEqual(bytes([50, 48, 50, 204, 208, 210]), self.trm.pack_value("STR", "ТРМ202"))
         self.assertEqual(b"", self.trm.pack_value("U8", None))      # if empty buffer
         self.assertIsInstance(self.trm.pack_value("I8", -12), bytes)
@@ -122,6 +130,8 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual(12, self.trm.unpack_value("U8", bytes([12]), None))
         self.assertEqual(-12, self.trm.unpack_value("I8", bytes([244]), None))
         self.assertEqual("ТРМ202", self.trm.unpack_value("STR", bytes([50, 48, 50, 204, 208, 210]), None))
+        self.assertEqual((10, 2, 3, 5), self.trm.unpack_value("CLK", bytes([0, 0, 16, 2, 3, 5]), None))
+        self.assertEqual((123456, 32, 48, 57), self.trm.unpack_value("CLK", bytes([18, 52, 86, 50, 72, 87]), None))
         self.assertRaises(OwenError, lambda: self.trm.unpack_value("F32", bytes([253]), None))  # if error code
 
     def test_make_packet(self) -> None:
@@ -152,6 +162,63 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertRaises(OwenError, lambda: self.trm.parse_response(b"#GHHGROTVJNPQ\r", b"#IJKJGIJJJHKOKNIJTO\r"))            # if addresses mismatch
         self.assertIsInstance(self.trm.parse_response(b"#GHHGJONIJKMN\r", b"#GHGHJONIMKKIMP\r"), bytes)
         self.assertIsInstance(self.trm.parse_response(b"#GHGLUHNTJVOGGGGGGGQGIG\r", b"#GHGLUHNTJVOGGGGGGGQGIG\r"), bytes)
+
+    def test_get_param(self) -> None:
+        # invalid index
+        self.assertRaises(OwenError, lambda: self.trm.get_param(name="A.LEN", index=2))
+
+        # correct index
+        self.trm.send_message = MagicMock(return_value=bytes([0]))
+        self.assertEqual(0, self.trm.get_param(name="A.LEN", index=None))
+
+        self.trm.send_message = MagicMock(return_value=bytes([71, 180, 101]))
+        self.assertEqual((71, 46181), self.trm.get_param(name="N.ERR", index=None))
+
+    def test_set_param(self) -> None:
+        # invalid index
+        self.assertRaises(OwenError, lambda: self.trm.set_param(name="A.LEN", index=2, value=0))
+
+        # correct index and value
+        self.trm.send_message = MagicMock(return_value=bytes([0]))
+        self.assertTrue(self.trm.set_param(name="A.LEN", index=None, value=0))
+
+
+class TestModbusProtocol(unittest.TestCase):
+    """The unittest for Modbus protocol."""
+
+    def setUp(self) -> None:
+        self.trm = Modbus(unit=1, device=TRM201, addr_len_8=True)
+
+    def tearDown(self) -> None:
+        del self.trm
+
+    def test_check_error(self) -> None:
+        err = MagicMock(ModbusResponse)
+
+        err.isError.return_value = False
+        self.assertTrue(self.trm.check_error(retcode=err))
+
+        err.isError.return_value = True
+        self.assertRaises(OwenError, lambda: self.trm.check_error(retcode=err))
+
+    def test_get_param(self) -> None:
+        # invalid index
+        self.assertRaises(OwenError, lambda: self.trm.get_param(name="SP", index=2))
+
+        # correct index
+        self.trm._read = MagicMock(return_value=bytearray([0x1, 0x3, 0x2, 0x0, 0x1, 0x79, 0x84]))
+        self.trm.modify_value = MagicMock(return_value=20.0)
+        self.assertEqual(20.0, self.trm.get_param(name="SP", index=0))
+
+    def test_set_param(self) -> None:
+        value = 20.0
+        # correct index and value
+        self.trm.modify_value = MagicMock(return_value=value)
+        self.trm.write = MagicMock(return_value=WriteMultipleRegistersResponse(1, 2))
+        self.assertTrue(self.trm.set_param(name="SP", index=0, value=value))
+
+        # invalid index
+        self.assertRaises(OwenError, lambda: self.trm.set_param(name="SP", index=2, value=value))
 
 
 if __name__ == "__main__":

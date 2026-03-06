@@ -1,16 +1,16 @@
 #! /usr/bin/env python3
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 setup(name="python-owen",
-      version="0.4.2",
+      version="0.5.0",
       description="OWEN controllers library",
       url="https://github.com/RAA80/python-owen",
       author="Alexey Ryadno",
       author_email="aryadno@mail.ru",
       license="MIT",
-      packages=["owen"],
-      install_requires=["pymodbus < 3", "pyserial >= 3.4"],
+      packages=find_packages(),
+      install_requires=["pymodbus >= 3.0, < 3.5", "pyserial >= 3.5"],
       platforms=["Linux", "Windows"],
       classifiers=["Development Status :: 4 - Beta",
                    "Intended Audience :: Science/Research",

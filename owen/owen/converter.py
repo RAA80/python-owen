@@ -1,6 +1,8 @@
 #! /usr/bin/env python3
 
-"""Функции для упаковки и распаковки разных типов данных."""
+"""Функции для упаковки и распаковки разных типов данных протокола ОВЕН."""
+
+from __future__ import annotations
 
 from binascii import hexlify, unhexlify
 from decimal import Decimal
@@ -213,6 +215,29 @@ def unpack_dot3(value: bytes, index: int) -> float:
     return _decode_dot_u(value, index) / 1000.0
 
 
+def pack_clk(value: tuple[int, ...]) -> bytes:
+    """Упаковка данных типа CLK_FRM (для СИ8)."""
+
+    hours = pack_dot0(value[0])
+    hours = b"\x00" * (3 - len(hours)) + hours
+    minutes = pack_dot0(value[1])
+    seconds = pack_dot0(value[2])
+    msec = pack_dot0(value[3])
+
+    return bytes([*hours, *minutes, *seconds, *msec])
+
+
+def unpack_clk(value: bytes, index: int) -> tuple[int, ...]:
+    """Распаковка данных типа CLK_FRM (для СИ8)."""
+
+    hours = unpack_dot0(value[:3], index)
+    minutes = unpack_dot0(value[3:4], index)
+    seconds = unpack_dot0(value[4:5], index)
+    msec = unpack_dot0(value[5:6], index)
+
+    return hours, minutes, seconds, msec
+
+
 OWEN_TYPE = {"F32+T": {"pack": pack_f32t, "unpack": unpack_f32t},
              "SDOT":  {"pack": pack_sdot, "unpack": unpack_sdot},
              "DOT0":  {"pack": pack_dot0, "unpack": unpack_dot0},
@@ -226,4 +251,6 @@ OWEN_TYPE = {"F32+T": {"pack": pack_f32t, "unpack": unpack_f32t},
              "U8":    {"pack": pack_u8,   "unpack": unpack_u8},
              "I8":    {"pack": pack_i8,   "unpack": unpack_i8},
              "U24":   {"pack": pack_u24,  "unpack": unpack_u24},   # для N.err
-             "STR":   {"pack": pack_str,  "unpack": unpack_str}}
+             "STR":   {"pack": pack_str,  "unpack": unpack_str},
+             "CLK":   {"pack": pack_clk,  "unpack": unpack_clk},
+            }
