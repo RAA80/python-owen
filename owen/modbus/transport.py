@@ -13,7 +13,7 @@ from pymodbus.client import ModbusSerialClient, ModbusTcpClient
 
 if TYPE_CHECKING:
     from pymodbus.payload import BinaryPayloadBuilder
-    from pymodbus.pdu import ModbusResponse
+    from pymodbus.pdu import ModbusPDU
 
 
 class ModbusSerialTransport:
@@ -21,12 +21,22 @@ class ModbusSerialTransport:
     через интерфейс RS485.
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, port: str,
+                       baudrate: int = 9600,
+                       bytesize: int = 8,
+                       parity: str = "N",
+                       stopbits: int = 2,
+                       **kwargs: Any) -> None:
         """Инициализация класса транспорта для взаимодействия с устройством по
         протоколу MODBUS через интерфейс RS485.
         """
 
-        self.socket = ModbusSerialClient(**kwargs)
+        self.socket = ModbusSerialClient(port=port,
+                                         baudrate=baudrate,
+                                         bytesize=bytesize,
+                                         parity=parity,
+                                         stopbits=stopbits,
+                                         **kwargs)
         self.socket.connect()
 
     def __del__(self) -> None:
@@ -36,14 +46,14 @@ class ModbusSerialTransport:
             self.socket.close()
 
     def write(self, address: int, builder: BinaryPayloadBuilder,
-                    unit: int) -> ModbusResponse:
+                    unit: int) -> ModbusPDU:
         """Запись данных по интерфейсу."""
 
         return self.socket.write_registers(address=address,
                                            values=builder.to_registers(),
                                            slave=unit)
 
-    def read(self, address: int, count: int, unit: int) -> ModbusResponse:
+    def read(self, address: int, count: int, unit: int) -> ModbusPDU:
         """Чтение данных по интерфейсу."""
 
         return self.socket.read_holding_registers(address=address,
@@ -56,10 +66,10 @@ class ModbusTcpTransport(ModbusSerialTransport):
     через интерфейс Ethernet.
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, host: str, port: int = 502, **kwargs: Any) -> None:
         """Инициализация класса транспорта для взаимодействия с устройством по
         протоколу MODBUS TCP через интерфейс Ethernet.
         """
 
-        self.socket = ModbusTcpClient(**kwargs)
+        self.socket = ModbusTcpClient(host=host, port=port, **kwargs)
         self.socket.connect()

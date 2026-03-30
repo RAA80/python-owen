@@ -3,14 +3,14 @@
 from setuptools import find_packages, setup
 
 setup(name="python-owen",
-      version="0.5.0",
+      version="0.5.1",
       description="OWEN controllers library",
       url="https://github.com/RAA80/python-owen",
       author="Alexey Ryadno",
       author_email="aryadno@mail.ru",
       license="MIT",
       packages=find_packages(),
-      install_requires=["pymodbus >= 3.0, < 3.5", "pyserial >= 3.5"],
+      install_requires=["pymodbus >= 3.0, < 3.9", "pyserial >= 3.5"],
       platforms=["Linux", "Windows"],
       classifiers=["Development Status :: 4 - Beta",
                    "Intended Audience :: Science/Research",

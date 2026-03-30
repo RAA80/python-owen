@@ -20,7 +20,9 @@ Transport = Union[ModbusSerialTransport, ModbusTcpTransport, OwenSerialTransport
 class OwenDevice:
     """Класс клиента для работы с устройствами ОВЕН."""
 
-    def __init__(self, transport: Transport, device: DEVICE, unit: int,
+    def __init__(self, transport: Transport,
+                       device: DEVICE,
+                       unit: int,
                        addr_len_8: bool = True) -> None:
         """Инициализация класса клиента для работы с устройствами ОВЕН.
 
@@ -32,7 +34,6 @@ class OwenDevice:
 
         """
 
-        self._transport = transport
         self._protocol = {OwenSerialTransport: Owen,
                           ModbusSerialTransport: Modbus,
                           ModbusTcpTransport: Modbus,

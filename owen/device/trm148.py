@@ -6,8 +6,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pymodbus.constants import Endian
-
 if TYPE_CHECKING:
     from owen.device._types import DEVICE
 
@@ -71,6 +69,6 @@ TRM148: DEVICE = {
                "ABSC":   {"type": "F32", "index": {0: 0x0800, 1: 0x0802, 2: 0x0804, 3: 0x0806, 4: 0x0808, 5: 0x080A, 6: 0x080C, 7: 0x080E, 8: 0x0810, 9: 0x0812, 10: 0x0814, 11: 0x0816, 12: 0x0818, 13: 0x081A, 14: 0x081C, 15: 0x081E, 16: 0x0820, 17: 0x0822, 18: 0x0824, 19: 0x0826}, "dp": None, "precision": 0},
                "ORDN":   {"type": "F32", "index": {0: 0x0900, 1: 0x0902, 2: 0x0904, 3: 0x0906, 4: 0x0908, 5: 0x090A, 6: 0x090C, 7: 0x090E, 8: 0x0910, 9: 0x0912, 10: 0x0914, 11: 0x0916, 12: 0x0918, 13: 0x091A, 14: 0x091C, 15: 0x091E, 16: 0x0920, 17: 0x0922, 18: 0x0924, 19: 0x0926}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Big,
+    "byteorder": ">",
+    "wordorder": ">",
 }

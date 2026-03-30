@@ -6,8 +6,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pymodbus.constants import Endian
-
 if TYPE_CHECKING:
     from owen.device._types import DEVICE
 
@@ -80,8 +78,8 @@ MU210_502: DEVICE = {
                "CHANNEL.VALUE":    {"type": "U16", "index": {0: 0x0BB8, 1: 0x0BB9, 2: 0x0BBA, 3: 0x0BBB, 4: 0x0BBC, 5: 0x0BBD}, "dp": None, "precision": 0},
                "CHANNEL.VALUE-MV": {"type": "U16", "index": {0: 0x0BF8, 1: 0x0BF9, 2: 0x0BFA, 3: 0x0BFB, 4: 0x0BFC, 5: 0x0BFD}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
 
 
@@ -152,8 +150,8 @@ MU210_401: DEVICE = {
                "DO.SET_STATE":      {"type": "U16", "index": {None: 0x01D6}, "dp": None, "precision": 0},
                "DO.STATE":          {"type": "U16", "index": {None: 0x01D4}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
 
 
@@ -224,8 +222,8 @@ MU210_402: DEVICE = {
                "DO.SET_STATE":      {"type": "U16", "index": {None: 0x01D6}, "dp": None, "precision": 0},
                "DO.STATE":          {"type": "U16", "index": {None: 0x01D4}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
 
 
@@ -296,8 +294,8 @@ MU210_403: DEVICE = {
                "DO.SET_STATE":      {"type": "U32", "index": {None: 0x01D6}, "dp": None, "precision": 0},
                "DO.STATE":          {"type": "U32", "index": {None: 0x01D4}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
 
 
@@ -372,6 +370,6 @@ MU210_412: DEVICE = {
                "DO.SET_STATE":        {"type": "U32", "index": {None: 0x01D6}, "dp": None, "precision": 0},
                "DO.STATE":            {"type": "U32", "index": {None: 0x01D4}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }

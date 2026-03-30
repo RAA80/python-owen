@@ -13,7 +13,7 @@ from owen.exception import OwenError
 from owen.modbus.converter import MODBUS_TYPE
 
 if TYPE_CHECKING:
-    from pymodbus.pdu import ModbusResponse
+    from pymodbus.pdu import ModbusPDU
 
     from owen.device._types import DEVICE, MODBUS
 
@@ -29,20 +29,21 @@ class Modbus:
         self.byteorder = device["byteorder"]
         self.wordorder = device["wordorder"]
 
-    def read(self, address: int, count: int, unit: int) -> ModbusResponse:
+    def read(self, address: int, count: int, unit: int) -> ModbusPDU:
         """Чтение данных."""
 
         raise NotImplementedError
 
     def write(self, address: int, builder: BinaryPayloadBuilder,
-                    unit: int) -> ModbusResponse:
+                    unit: int) -> ModbusPDU:
         """Запись данных."""
 
         raise NotImplementedError
 
-    @staticmethod
-    def check_index(name: str, dev: MODBUS, index: int | None) -> int | None:
+    def check_index(self, name: str, index: int | None) -> tuple[MODBUS, int | None]:
         """Проверка индекса."""
+
+        dev = self.device[name]
 
         if not index:
             index = None if None in dev["index"] else 0
@@ -50,10 +51,10 @@ class Modbus:
             msg = f"'{name}' does not support index '{index}'"
             raise OwenError(msg)
 
-        return index
+        return dev, index
 
     @staticmethod
-    def check_error(retcode: ModbusResponse) -> bool:
+    def check_error(retcode: ModbusPDU) -> bool:
         """Проверка возвращаемого значения на ошибку."""
 
         if retcode.isError():
@@ -93,8 +94,7 @@ class Modbus:
     def get_param(self, name: str, index: int | None = None) -> float | str:
         """Чтение данных из устройства."""
 
-        dev = self.device[name]
-        index = self.check_index(name, dev, index)
+        dev, index = self.check_index(name, index)
         value = self._read(dev, index)
         return self.modify_value(truediv, dev, index, value)
 
@@ -102,8 +102,7 @@ class Modbus:
                         value: float | str | None = None) -> bool:
         """Запись данных в устройство."""
 
-        dev = self.device[name]
-        index = self.check_index(name, dev, index)
+        dev, index = self.check_index(name, index)
         value = self.modify_value(mul, dev, index, value)
 
         builder = BinaryPayloadBuilder(payload=None,

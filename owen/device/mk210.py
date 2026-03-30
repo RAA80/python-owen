@@ -6,8 +6,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pymodbus.constants import Endian
-
 if TYPE_CHECKING:
     from owen.device._types import DEVICE
 
@@ -84,8 +82,8 @@ MK210_301: DEVICE = {
                "DO.SET_STATE":          {"type":  "U8", "index": {None: 0x01D6}, "dp": None, "precision": 0},
                "DO.STATE":              {"type":  "U8", "index": {None: 0x01D4}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
 
 
@@ -164,6 +162,6 @@ MK210_302: DEVICE = {
                "DO.DIAGNOSTIC":         {"type":  "U8", "index": {None: 0x01D8}, "dp": None, "precision": 0},
                "DI.STATE":              {"type":  "U8", "index": {None: 0x0033}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }

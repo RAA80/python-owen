@@ -17,12 +17,22 @@ class OwenSerialTransport:
     интерфейс RS485.
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, port: str,
+                       baudrate: int = 9600,
+                       bytesize: int = 8,
+                       parity: str = "N",
+                       stopbits: int = 1,
+                       **kwargs: Any) -> None:
         """Инициализация класса транспорта для взаимодействия с устройством по
         протоколу ОВЕН через интерфейс RS485.
         """
 
-        self.socket = Serial(**kwargs)
+        self.socket = Serial(port=port,
+                             baudrate=baudrate,
+                             bytesize=bytesize,
+                             parity=parity,
+                             stopbits=stopbits,
+                             **kwargs)
 
     def __del__(self) -> None:
         """Закрытие соединения с устройством при удалении объекта."""

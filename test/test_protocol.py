@@ -7,8 +7,11 @@ from owen.device import TRM201
 from owen.exception import OwenError
 from owen.modbus.protocol import Modbus
 from owen.owen.protocol import Owen
-from pymodbus.pdu import ModbusResponse
-from pymodbus.register_write_message import WriteMultipleRegistersResponse
+
+try:
+    from pymodbus.register_write_message import WriteMultipleRegistersResponse
+except ImportError:
+    from pymodbus.pdu.register_message import WriteMultipleRegistersResponse
 
 
 class TestOwenProtocol(unittest.TestCase):
@@ -193,7 +196,7 @@ class TestModbusProtocol(unittest.TestCase):
         del self.trm
 
     def test_check_error(self) -> None:
-        err = MagicMock(ModbusResponse)
+        err = MagicMock()
 
         err.isError.return_value = False
         self.assertTrue(self.trm.check_error(retcode=err))

@@ -52,9 +52,10 @@ class Owen:
 
         raise NotImplementedError
 
-    @staticmethod
-    def check_index(name: str, dev: OWEN, index: int | None) -> int | None:
+    def check_index(self, name: str, index: int | None) -> tuple[OWEN, int | None]:
         """Проверка индекса."""
+
+        dev = self.device[name]
 
         if not index:
             index = None if None in dev["index"] else 0
@@ -62,7 +63,7 @@ class Owen:
             msg = f"'{name}' does not support index '{index}'"
             raise OwenError(msg)
 
-        return index
+        return dev, index
 
     @staticmethod
     def fast_calc(value: int, crc: int, bits: int) -> int:
@@ -177,15 +178,14 @@ class Owen:
         """Подготовка данных для обмена."""
 
         packet = self.make_packet(flag, name, index, data)
-        self.write(packet=packet)
+        self.write(packet)
         answer = self.read()
         return self.parse_response(packet, answer)
 
     def get_param(self, name: str, index: int | None = None) -> float | str:
         """Чтение данных из устройства."""
 
-        dev = self.device[name]
-        index = self.check_index(name, dev, index)
+        dev, index = self.check_index(name, index)
         result = self.send_message(1, name, index)
         return self.unpack_value(dev["type"], result, index)
 
@@ -193,7 +193,6 @@ class Owen:
                         value: float | str | None = None) -> bool:
         """Запись данных в устройство."""
 
-        dev = self.device[name]
-        index = self.check_index(name, dev, index)
+        dev, index = self.check_index(name, index)
         data = self.pack_value(dev["type"], value)
         return bool(self.send_message(0, name, index, data))

@@ -8,8 +8,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pymodbus.constants import Endian
-
 if TYPE_CHECKING:
     from owen.device._types import DEVICE
 
@@ -84,6 +82,6 @@ TRM10: DEVICE = {
                "ATR.E":      {"type":  "U16", "index": {None: 0x0802}, "dp": None, "precision": 0},
                "CJS.E":      {"type":  "U16", "index": {None: 0x0803}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Big,
+    "byteorder": ">",
+    "wordorder": ">",
 }

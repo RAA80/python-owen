@@ -6,8 +6,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pymodbus.constants import Endian
-
 if TYPE_CHECKING:
     from owen.device._types import DEVICE
 
@@ -95,8 +93,8 @@ PR103_230_1610_01: DEVICE = {
                "DO.STATE":      {"type": "U16", "index": {None: 0x01D4}, "dp": None, "precision": 0},
                "OUTPUT.SAFETY": {"type": "U16", "index": {0: 0x01DA, 1: 0x01DB, 2: 0x01DC, 3: 0x01DD, 4: 0x01DE, 5: 0x01DF, 6: 0x01E0, 7: 0x01E1, 8: 0x01E2, 9: 0x01E3}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
 
 
@@ -204,8 +202,8 @@ PR103_24_1610_03: DEVICE = {
                "INPUT.VALUE":              {"type": "F32", "index": {0: 0x0FA2, 1: 0x0FA4, 2: 0x0FA6, 3: 0x0FA8, 4: 0x0FAA, 5: 0x0FAC}, "dp": None, "precision": 0},
                "OUTPUT.SAFETY":            {"type": "U16", "index": {0: 0x01DA, 1: 0x01DB, 2: 0x01DC, 3: 0x01DD, 4: 0x01DE, 5: 0x01DF, 6: 0x01E0, 7: 0x01E1, 8: 0x01E2, 9: 0x01E3}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
 
 
@@ -321,8 +319,8 @@ PR103_24_1612_05: DEVICE = {
                "INPUT.VALUE":              {"type": "F32", "index": {0: 0x0FA2, 1: 0x0FA4, 2: 0x0FA6, 3: 0x0FA8, 4: 0x0FAA, 5: 0x0FAC}, "dp": None, "precision": 0},
                "OUTPUT.SAFETY":            {"type": "U16", "index": {0: 0x01DA, 1: 0x01DB, 2: 0x01DC, 3: 0x01DD, 4: 0x01DE, 5: 0x01DF, 6: 0x01E0, 7: 0x01E1}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
 
 
@@ -435,8 +433,8 @@ PR103_24_1610_06: DEVICE = {
                "OUTPUT.ANALOG.VALUE":      {"type": "F32", "index": {0: 0x0BB8, 1: 0x0BBA}, "dp": None, "precision": 0},
                "OUTPUT.SAFETY":            {"type": "U16", "index": {0: 0x01DA, 1: 0x01DB, 2: 0x01DC, 3: 0x01DD, 4: 0x01DE, 5: 0x01DF, 6: 0x01E0, 7: 0x01E1}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
 
 
@@ -553,8 +551,8 @@ PR103_24_1618_16: DEVICE = {
                "OUTPUT.ANALOG.STATE":      {"type": "U16", "index": {0: 0x0C38, 1: 0x0C39}, "dp": None, "precision": 0},
                "OUTPUT.ANALOG.VALUE":      {"type": "F32", "index": {0: 0x0BB8, 1: 0x0BBA}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
 
 
@@ -670,6 +668,6 @@ PR103_24_1618_17: DEVICE = {
                "INPUT.VALUE":              {"type": "F32", "index": {0: 0x0FA2, 1: 0x0FA4, 2: 0x0FA6, 3: 0x0FA8, 4: 0x0FAA, 5: 0x0FAC}, "dp": None, "precision": 0},
                "OUTPUT.SAFETY":            {"type": "U16", "index": {0: 0x01DA, 1: 0x01DB}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }

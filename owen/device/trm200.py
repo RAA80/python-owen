@@ -6,8 +6,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pymodbus.constants import Endian
-
 if TYPE_CHECKING:
     from owen.device._types import DEVICE
 
@@ -78,6 +76,6 @@ TRM200: DEVICE = {
                "SQR":   {"type":  "U16", "index": {0: 0x0209, 1: 0x0214}, "dp": None, "precision": 0},
                "ILU":   {"type":  "U16", "index": {0: 0x020A, 1: 0x0215}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Big,
+    "byteorder": ">",
+    "wordorder": ">",
 }

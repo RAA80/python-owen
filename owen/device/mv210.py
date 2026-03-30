@@ -6,8 +6,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pymodbus.constants import Endian
-
 if TYPE_CHECKING:
     from owen.device._types import DEVICE
 
@@ -89,8 +87,8 @@ MV210_101: DEVICE = {
                "CHANNEL.TIME":   {"type": "U16", "index": {0: 0x0FA2, 1: 0x0FA5, 2: 0x0FA8, 3: 0x0FAB, 4: 0x0FAE, 5: 0x0FB1, 6: 0x0FB4, 7: 0x0FB7}, "dp": None, "precision": 0},
                "CHANNEL.VALUE":  {"type": "F32", "index": {0: 0x0FA0, 1: 0x0FA3, 2: 0x0FA6, 3: 0x0FA9, 4: 0x0FAC, 5: 0x0FAF, 6: 0x0FB2, 7: 0x0FB5}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
 
 
@@ -161,8 +159,8 @@ MV210_202: DEVICE = {
                "CHANNEL.DI.RESET":   {"type": "U16", "index": {0: 0x00E0, 1: 0x00E1, 2: 0x00E2, 3: 0x00E3, 4: 0x00E4, 5: 0x00E5, 6: 0x00E6, 7: 0x00E7, 8: 0x00E8, 9: 0x00E9, 10: 0x00EA, 11: 0x00EB, 12: 0x00EC, 13: 0x00ED, 14: 0x00EE, 15: 0x00EF, 16: 0x00F0, 17: 0x00F1, 18: 0x00F2, 19: 0x00F3}, "dp": None, "precision": 0},
                "DI.STATE":           {"type": "U32", "index": {None: 0x0033}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
 
 
@@ -233,8 +231,8 @@ MV210_212: DEVICE = {
                "CHANNEL.DI.RESET":   {"type": "U16", "index": {0: 0x00E0, 1: 0x00E1, 2: 0x00E2, 3: 0x00E3, 4: 0x00E4, 5: 0x00E5, 6: 0x00E6, 7: 0x00E7, 8: 0x00E8, 9: 0x00E9, 10: 0x00EA, 11: 0x00EB, 12: 0x00EC, 13: 0x00ED, 14: 0x00EE, 15: 0x00EF, 16: 0x00F0, 17: 0x00F1, 18: 0x00F2, 19: 0x00F3, 20: 0x00F4, 21: 0x00F5, 22: 0x00F6, 23: 0x00F7, 24: 0x00F8, 25: 0x00F9, 26: 0x00FA, 27: 0x00FB, 28: 0x00FC, 29: 0x00FD, 30: 0x00FE, 31: 0x00FF}, "dp": None, "precision": 0},
                "DI.STATE":           {"type": "U32", "index": {None: 0x0033}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
 
 
@@ -321,6 +319,6 @@ MV210_221: DEVICE = {
                "INPUTS.TIME.B":          {"type": "U32", "index": {0: 0x13CA, 1: 0x13D0, 2: 0x13D6}, "dp": None, "precision": 0},
                "INPUTS.TIME.C":          {"type": "U32", "index": {0: 0x13CC, 1: 0x13D2, 2: 0x13D8}, "dp": None, "precision": 0},
               },
-    "byteorder": Endian.Big,
-    "wordorder": Endian.Little,
+    "byteorder": ">",
+    "wordorder": "<",
 }
