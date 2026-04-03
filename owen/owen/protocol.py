@@ -52,19 +52,6 @@ class Owen:
 
         raise NotImplementedError
 
-    def check_index(self, name: str, index: int | None) -> tuple[OWEN, int | None]:
-        """Проверка индекса."""
-
-        dev = self.device[name]
-
-        if not index:
-            index = None if None in dev["index"] else 0
-        if index not in dev["index"]:
-            msg = f"'{name}' does not support index '{index}'"
-            raise OwenError(msg)
-
-        return dev, index
-
     @staticmethod
     def fast_calc(value: int, crc: int, bits: int) -> int:
         """Вычисление значения полинома."""
@@ -181,6 +168,19 @@ class Owen:
         self.write(packet)
         answer = self.read()
         return self.parse_response(packet, answer)
+
+    def check_index(self, name: str, index: int | None) -> tuple[OWEN, int | None]:
+        """Проверка индекса."""
+
+        dev = self.device[name]
+
+        if not index:
+            index = None if None in dev["index"] else 0
+        if index not in dev["index"]:
+            msg = f"'{name}' does not support index '{index}'"
+            raise OwenError(msg)
+
+        return dev, index
 
     def get_param(self, name: str, index: int | None = None) -> float | str:
         """Чтение данных из устройства."""

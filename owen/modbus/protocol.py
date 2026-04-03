@@ -40,19 +40,6 @@ class Modbus:
 
         raise NotImplementedError
 
-    def check_index(self, name: str, index: int | None) -> tuple[MODBUS, int | None]:
-        """Проверка индекса."""
-
-        dev = self.device[name]
-
-        if not index:
-            index = None if None in dev["index"] else 0
-        if index not in dev["index"]:
-            msg = f"'{name}' does not support index '{index}'"
-            raise OwenError(msg)
-
-        return dev, index
-
     @staticmethod
     def check_error(retcode: ModbusPDU) -> bool:
         """Проверка возвращаемого значения на ошибку."""
@@ -90,6 +77,19 @@ class Modbus:
 
         prec = dev["precision"]
         return func(value, 10.0**prec) if prec else value
+
+    def check_index(self, name: str, index: int | None) -> tuple[MODBUS, int | None]:
+        """Проверка индекса."""
+
+        dev = self.device[name]
+
+        if not index:
+            index = None if None in dev["index"] else 0
+        if index not in dev["index"]:
+            msg = f"'{name}' does not support index '{index}'"
+            raise OwenError(msg)
+
+        return dev, index
 
     def get_param(self, name: str, index: int | None = None) -> float | str:
         """Чтение данных из устройства."""

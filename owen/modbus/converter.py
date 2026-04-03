@@ -20,37 +20,37 @@ def pack_str(builder: BinaryPayloadBuilder, value: str) -> BinaryPayloadBuilder:
 def unpack_str8(decoder: BinaryPayloadDecoder) -> str:
     """Распаковка данных типа STR8."""
 
-    return decoder.decode_string(8)
+    return decoder.decode_string(8).decode("cp1251")
 
 
 def unpack_str16(decoder: BinaryPayloadDecoder) -> str:
     """Распаковка данных типа STR16."""
 
-    return decoder.decode_string(16)
+    return decoder.decode_string(16).decode("cp1251")
 
 
 def unpack_str32(decoder: BinaryPayloadDecoder) -> str:
     """Распаковка данных типа STR32."""
 
-    return decoder.decode_string(32)
+    return decoder.decode_string(32).decode("cp1251")
 
 
 def unpack_str64(decoder: BinaryPayloadDecoder) -> str:
     """Распаковка данных типа STR64."""
 
-    return decoder.decode_string(64)
+    return decoder.decode_string(64).decode("cp1251")
 
 
 def unpack_str128(decoder: BinaryPayloadDecoder) -> str:
     """Распаковка данных типа STR128."""
 
-    return decoder.decode_string(128)
+    return decoder.decode_string(128).decode("cp1251")
 
 
 def unpack_str256(decoder: BinaryPayloadDecoder) -> str:
     """Распаковка данных типа STR256."""
 
-    return decoder.decode_string(256)
+    return decoder.decode_string(256).decode("cp1251")
 
 
 def pack_i8(builder: BinaryPayloadBuilder, value: int) -> BinaryPayloadBuilder:

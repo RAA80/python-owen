@@ -121,6 +121,7 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual(410.0, self.trm.unpack_value("SDOT", bytes([16, 16, 4]), None))
         self.assertEqual(0.0, self.trm.unpack_value("SDOT", bytes([16, 0, 0]), 0))
         self.assertEqual(0.0, self.trm.unpack_value("SDOT", bytes([16]), None))
+        self.assertEqual(-10.38, self.trm.unpack_value("SDOT", bytes([0xA4, 0x0E]), None))
         self.assertEqual(0, self.trm.unpack_value("DOT0", bytes([0]), None))
         self.assertEqual(99, self.trm.unpack_value("DOT0", bytes([153]), None))
         self.assertEqual(304, self.trm.unpack_value("DOT0", bytes([3, 4]), None))

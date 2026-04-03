@@ -174,12 +174,8 @@ def unpack_sdot(value: bytes, index: int) -> float:
 def _encode_dot_u(value: float) -> bytes:
     """Упаковка данных типа DEC_DOTi."""
 
-    value = int(value)
-    length = len(str(value))
-    length += length % 2
-    hexstr = f"{value:0{length}d}"
-
-    return unhexlify(hexstr)
+    s = str(int(value))
+    return unhexlify(s.zfill(len(s) + len(s) % 2))
 
 
 def pack_dot0(value: float) -> bytes:
@@ -218,8 +214,7 @@ def unpack_dot3(value: bytes, index: int) -> float:
 def pack_clk(value: tuple[int, ...]) -> bytes:
     """Упаковка данных типа CLK_FRM (для СИ8)."""
 
-    hours = pack_dot0(value[0])
-    hours = b"\x00" * (3 - len(hours)) + hours
+    hours = pack_dot0(value[0]).rjust(3, b"\x00")
     minutes = pack_dot0(value[1])
     seconds = pack_dot0(value[2])
     msec = pack_dot0(value[3])

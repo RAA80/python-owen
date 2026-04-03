@@ -3,7 +3,7 @@
 from setuptools import find_packages, setup
 
 setup(name="python-owen",
-      version="0.5.1",
+      version="0.5.2",
       description="OWEN controllers library",
       url="https://github.com/RAA80/python-owen",
       author="Alexey Ryadno",
