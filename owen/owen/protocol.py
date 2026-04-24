@@ -101,10 +101,13 @@ class Owen:
     def unpack_value(frmt: str, value: bytes, index: int | None) -> float | str:
         """Распаковка данных заданного формата."""
 
+        if index is not None:
+            value = value[:-2]
+
         try:
-            return OWEN_TYPE[frmt]["unpack"](value, index)
+            return OWEN_TYPE[frmt]["unpack"](value)
         except error:
-            errcode = OWEN_TYPE["U8"]["unpack"](value, index)
+            errcode = OWEN_TYPE["U8"]["unpack"](value)
             msg = f"Device error={errcode:02X}"
             raise OwenError(msg) from None
 
@@ -162,7 +165,7 @@ class Owen:
 
     def send_message(self, flag: int, name: str, index: int | None,
                            data: bytes = b"") -> bytes:
-        """Подготовка данных для обмена."""
+        """Обмен данными с устройством."""
 
         packet = self.make_packet(flag, name, index, data)
         self.write(packet)
@@ -195,4 +198,6 @@ class Owen:
 
         dev, index = self.check_index(name, index)
         data = self.pack_value(dev["type"], value)
-        return bool(self.send_message(0, name, index, data))
+        result = self.send_message(0, name, index, data)
+        self.unpack_value(dev["type"], result, index)
+        return True

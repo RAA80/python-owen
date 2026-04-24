@@ -34,8 +34,7 @@ class Modbus:
 
         raise NotImplementedError
 
-    def write(self, address: int, builder: BinaryPayloadBuilder,
-                    unit: int) -> ModbusPDU:
+    def write(self, address: int, payload: list[int], unit: int) -> ModbusPDU:
         """Запись данных."""
 
         raise NotImplementedError
@@ -51,14 +50,7 @@ class Modbus:
     def _read(self, dev: MODBUS, index: int | None) -> float | str:
         """Чтение данных из регистра Modbus."""
 
-        count = {"U8": 1,  "STR8": 4,
-                 "I8": 1,  "STR16": 8,
-                 "I16": 1, "STR32": 16,
-                 "U16": 1, "STR64": 4,
-                 "I32": 2, "STR128": 8,
-                 "U32": 2, "STR256": 16,
-                 "F32": 2,
-                }[dev["type"]]
+        count = MODBUS_TYPE[dev["type"]]["size"]
         result = self.read(dev["index"][index], count, self.unit)
         self.check_error(result)
         decoder = BinaryPayloadDecoder.fromRegisters(registers=result.registers,
@@ -108,7 +100,7 @@ class Modbus:
         builder = BinaryPayloadBuilder(payload=None,
                                        byteorder=self.byteorder,
                                        wordorder=self.wordorder)
-        builder = MODBUS_TYPE[dev["type"]]["pack"](builder, value)
+        MODBUS_TYPE[dev["type"]]["pack"](builder, value)
 
-        result = self.write(dev["index"][index], builder, self.unit)
+        result = self.write(dev["index"][index], builder.to_registers(), self.unit)
         return self.check_error(result)

@@ -96,6 +96,8 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual(bytes([164, 14]), self.trm.pack_value("SDOT", -10.38))
         self.assertEqual(bytes([29, 172]), self.trm.pack_value("SDOT", 350.0))
         self.assertEqual(bytes([16, 16, 4]), self.trm.pack_value("SDOT", 410.0))
+        self.assertEqual(bytes([0, 100]), self.trm.pack_value("SDOT", 100))
+        self.assertEqual(bytes([19, 232]), self.trm.pack_value("SDOT", 100.0))
         self.assertEqual(bytes([16]), self.trm.pack_value("SDOT", 0.0))
         self.assertEqual(bytes([0]), self.trm.pack_value("DOT0", 0))
         self.assertEqual(bytes([153]), self.trm.pack_value("DOT0", 99))
@@ -117,6 +119,10 @@ class TestOwenProtocol(unittest.TestCase):
         self.assertEqual(123.45677947998047, self.trm.unpack_value("F32", bytes([66, 246, 233, 223]), None))
         self.assertEqual(350.0, self.trm.unpack_value("SDOT", bytes([29, 172, 0, 0]), 0))
         self.assertEqual(410.0, self.trm.unpack_value("SDOT", bytes([16, 16, 4, 0, 0]), 0))
+        self.assertEqual(100, self.trm.unpack_value("SDOT", bytes([0, 100]), None))
+        self.assertIsInstance(self.trm.unpack_value("SDOT", bytes([0, 100]), None), int)
+        self.assertEqual(100.0, self.trm.unpack_value("SDOT", bytes([19, 232]), None))
+        self.assertIsInstance(self.trm.unpack_value("SDOT", bytes([19, 232]), None), float)
         self.assertEqual(350.0, self.trm.unpack_value("SDOT", bytes([29, 172]), None))
         self.assertEqual(410.0, self.trm.unpack_value("SDOT", bytes([16, 16, 4]), None))
         self.assertEqual(0.0, self.trm.unpack_value("SDOT", bytes([16, 0, 0]), 0))
@@ -184,7 +190,7 @@ class TestOwenProtocol(unittest.TestCase):
 
         # correct index and value
         self.trm.send_message = MagicMock(return_value=bytes([0]))
-        self.assertTrue(self.trm.set_param(name="A.LEN", index=None, value=0))
+        self.assertIsInstance(self.trm.set_param(name="A.LEN", index=None, value=0), bool)
 
 
 class TestModbusProtocol(unittest.TestCase):

@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# mypy: disable-error-code="explicit-any"
+# mypy: disable-error-code="explicit-any, assignment"
 
 """Реализация классов транспорта для взаимодействия с устройством по
 протоколу MODBUS.
@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any
 from pymodbus.client import ModbusSerialClient, ModbusTcpClient
 
 if TYPE_CHECKING:
-    from pymodbus.payload import BinaryPayloadBuilder
     from pymodbus.pdu import ModbusPDU
 
 
@@ -45,12 +44,11 @@ class ModbusSerialTransport:
         if hasattr(self, "socket"):
             self.socket.close()
 
-    def write(self, address: int, builder: BinaryPayloadBuilder,
-                    unit: int) -> ModbusPDU:
+    def write(self, address: int, payload: list[int], unit: int) -> ModbusPDU:
         """Запись данных по интерфейсу."""
 
         return self.socket.write_registers(address=address,
-                                           values=builder.to_registers(),
+                                           values=payload,
                                            slave=unit)
 
     def read(self, address: int, count: int, unit: int) -> ModbusPDU:
