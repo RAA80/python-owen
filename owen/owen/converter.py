@@ -14,13 +14,10 @@ def pack_sdot(value: float) -> bytes:
 
     sign, digits, exponent = Decimal(str(value)).as_tuple()
     mantissa = int(Decimal((0, digits, 0)))
+    size = (mantissa.bit_length() + 11) // 8
 
-    frmt, size, chunk = {mantissa < 16: (">B", 4, slice(1)),
-                         mantissa >= 4096: (">I", 20, slice(1, 4)),
-                        }.get(True, (">H", 12, slice(2)))
-
-    bin_str = f"{sign:1b}{abs(exponent):03b}{mantissa:0{size}b}"
-    return pack(frmt, int(bin_str, 2))[chunk]
+    bin_str = f"{sign:1b}{abs(exponent):03b}{mantissa:0{size * 8 - 4}b}"
+    return int(bin_str, 2).to_bytes(size, "big")
 
 
 def unpack_sdot(value: bytes) -> int | float:
