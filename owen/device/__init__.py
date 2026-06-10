@@ -5,6 +5,8 @@
 from owen.device._2trm1 import _2TRM1 as _2TRM1
 from owen.device.mk210 import MK210_301 as MK210_301
 from owen.device.mk210 import MK210_302 as MK210_302
+from owen.device.mst24 import MST24 as MST24
+from owen.device.mst34 import MST34 as MST34
 from owen.device.mu210 import MU210_401 as MU210_401
 from owen.device.mu210 import MU210_402 as MU210_402
 from owen.device.mu210 import MU210_403 as MU210_403

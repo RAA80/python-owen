@@ -59,8 +59,11 @@ class Modbus:
         return MODBUS_TYPE[dev["type"]]["unpack"](decoder)
 
     def modify_value(self, func: Callable[[float, float], float], dev: MODBUS,
-                           index: int | None, value: float) -> float:
+                           index: int | None, value: float | str) -> float | str:
         """Преобразование значения к нужной точности."""
+
+        if isinstance(value, str):
+            return value
 
         if dev["dp"]:
             dp_dev = self.device[dev["dp"]]
@@ -95,7 +98,7 @@ class Modbus:
         """Запись данных в устройство."""
 
         dev, index = self.check_index(name, index)
-        value = self.modify_value(mul, dev, index, value)
+        value = self.modify_value(mul, dev, index, value)   # type: ignore
 
         builder = BinaryPayloadBuilder(payload=None,
                                        byteorder=self.byteorder,
