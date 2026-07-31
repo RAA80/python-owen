@@ -98,7 +98,7 @@ class Modbus:
         """Запись данных в устройство."""
 
         dev, index = self.check_index(name, index)
-        value = self.modify_value(mul, dev, index, value)   # type: ignore
+        value = self.modify_value(mul, dev, index, value or 0)
 
         builder = BinaryPayloadBuilder(payload=None,
                                        byteorder=self.byteorder,

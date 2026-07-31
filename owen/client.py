@@ -26,12 +26,10 @@ class OwenDevice:
                        addr_len_8: bool = True) -> None:
         """Инициализация класса клиента для работы с устройствами ОВЕН.
 
-        Args:
-            transport: Тип используемого транспорта
-            device: Название устройства (например: TRM201)
-            unit: Адрес устройства (0...2047 - для Овен, 0...255 - для Modbus)
-            addr_len_8: Длина адреса в битах (True=8, False=11). Для Modbus игнорируется
-
+        :param transport: Тип используемого транспорта
+        :param device: Название устройства (например: TRM201)
+        :param unit: Адрес устройства (0..2047 - для Овен, 0..255 - для Modbus)
+        :param addr_len_8: Длина адреса в битах (True=8, False=11). Для Modbus игнорируется
         """
 
         self._protocol = {OwenSerialTransport: Owen,
@@ -42,13 +40,22 @@ class OwenDevice:
         self._protocol.write = transport.write
 
     def get_param(self, name: str, index: int | None = None) -> float | str:
-        """Чтение значения параметра устройства."""
+        """Чтение значения параметра устройства.
+
+        :param name: Название параметра
+        :param index: Номер индекса параметра, если есть
+        """
 
         return self._protocol.get_param(name.upper(), index)
 
     def set_param(self, name: str, index: int | None = None,
                         value: float | str | None = None) -> bool:
-        """Запись нового значения параметра устройства."""
+        """Запись нового значения параметра устройства.
+
+        :param name: Название параметра
+        :param index: Номер индекса параметра, если есть
+        :param value: Новое значение параметра
+        """
 
         return self._protocol.set_param(name.upper(), index, value)
 
