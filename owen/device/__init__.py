@@ -25,6 +25,7 @@ from owen.device.pr103 import PR103_24_1618_17 as PR103_24_1618_17
 from owen.device.pr103 import PR103_230_1610_01 as PR103_230_1610_01
 from owen.device.si8 import SI8 as SI8
 from owen.device.si30 import SI30 as SI30
+from owen.device.si130 import SI130 as SI130
 from owen.device.th01 import TH01 as TH01
 from owen.device.trm10 import TRM10 as TRM10
 from owen.device.trm101 import TRM101 as TRM101
