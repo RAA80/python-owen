@@ -73,23 +73,23 @@ class Modbus:
         prec = dev["precision"]
         return func(value, 10.0**prec) if prec else value
 
-    def check_index(self, name: str, index: int | None) -> tuple[MODBUS, int | None]:
-        """Проверка индекса."""
+    def check_args(self, name: str, index: int | None) -> tuple[MODBUS, int | None]:
+        """Проверка аргументов."""
 
-        dev = self.device[name]
+        if name not in self.device:
+            msg = f"Unknown parameter name '{name}'"
+            raise OwenError(msg)
 
-        if not index:
-            index = None if None in dev["index"] else 0
-        if index not in dev["index"]:
+        if index not in self.device[name]["index"]:
             msg = f"'{name}' does not support index '{index}'"
             raise OwenError(msg)
 
-        return dev, index
+        return self.device[name], index
 
     def get_param(self, name: str, index: int | None = None) -> float | str:
         """Чтение данных из устройства."""
 
-        dev, index = self.check_index(name, index)
+        dev, index = self.check_args(name, index)
         value = self._read(dev, index)
         return self.modify_value(truediv, dev, index, value)
 
@@ -97,7 +97,7 @@ class Modbus:
                         value: float | str | None = None) -> bool:
         """Запись данных в устройство."""
 
-        dev, index = self.check_index(name, index)
+        dev, index = self.check_args(name, index)
         value = self.modify_value(mul, dev, index, value or 0)
 
         builder = BinaryPayloadBuilder(payload=None,

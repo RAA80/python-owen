@@ -176,8 +176,10 @@ class TestOwenProtocol(unittest.TestCase):
     def test_get_param(self) -> None:
         # invalid index
         self.assertRaises(OwenError, lambda: self.trm.get_param(name="A.LEN", index=2))
+        # invalid name
+        self.assertRaises(OwenError, lambda: self.trm.get_param(name="AAAA", index=0))
 
-        # correct index
+        # correct index and name
         self.trm.send_message = MagicMock(return_value=bytes([0]))
         self.assertEqual(0, self.trm.get_param(name="A.LEN", index=None))
 
@@ -187,6 +189,8 @@ class TestOwenProtocol(unittest.TestCase):
     def test_set_param(self) -> None:
         # invalid index
         self.assertRaises(OwenError, lambda: self.trm.set_param(name="A.LEN", index=2, value=0))
+        # invalid name
+        self.assertRaises(OwenError, lambda: self.trm.set_param(name="AAAA", index=0, value=0))
 
         # correct index and value
         self.trm.send_message = MagicMock(return_value=bytes([0]))
@@ -214,6 +218,8 @@ class TestModbusProtocol(unittest.TestCase):
     def test_get_param(self) -> None:
         # invalid index
         self.assertRaises(OwenError, lambda: self.trm.get_param(name="SP", index=2))
+        # invalid name
+        self.assertRaises(OwenError, lambda: self.trm.get_param(name="AAAA", index=0))
 
         # correct index
         self.trm._read = MagicMock(return_value=bytearray([0x1, 0x3, 0x2, 0x0, 0x1, 0x79, 0x84]))
@@ -229,6 +235,8 @@ class TestModbusProtocol(unittest.TestCase):
 
         # invalid index
         self.assertRaises(OwenError, lambda: self.trm.set_param(name="SP", index=2, value=value))
+        # invalid name
+        self.assertRaises(OwenError, lambda: self.trm.set_param(name="AAAA", index=0, value=value))
 
 
 if __name__ == "__main__":

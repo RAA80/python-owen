@@ -172,23 +172,23 @@ class Owen:
         answer = self.read()
         return self.parse_response(packet, answer)
 
-    def check_index(self, name: str, index: int | None) -> tuple[OWEN, int | None]:
-        """Проверка индекса."""
+    def check_args(self, name: str, index: int | None) -> tuple[OWEN, int | None]:
+        """Проверка аргументов."""
 
-        dev = self.device[name]
+        if name not in self.device:
+            msg = f"Unknown parameter name '{name}'"
+            raise OwenError(msg)
 
-        if not index:
-            index = None if None in dev["index"] else 0
-        if index not in dev["index"]:
+        if index not in self.device[name]["index"]:
             msg = f"'{name}' does not support index '{index}'"
             raise OwenError(msg)
 
-        return dev, index
+        return self.device[name], index
 
     def get_param(self, name: str, index: int | None = None) -> float | str:
         """Чтение данных из устройства."""
 
-        dev, index = self.check_index(name, index)
+        dev, index = self.check_args(name, index)
         result = self.send_message(1, name, index)
         return self.unpack_value(dev["type"], result, index)
 
@@ -196,7 +196,7 @@ class Owen:
                         value: float | str | None = None) -> bool:
         """Запись данных в устройство."""
 
-        dev, index = self.check_index(name, index)
+        dev, index = self.check_args(name, index)
         data = self.pack_value(dev["type"], value)
         result = self.send_message(0, name, index, data)
         self.unpack_value(dev["type"], result, index)

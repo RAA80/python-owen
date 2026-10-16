@@ -54,6 +54,11 @@ MODBUS_TYPE: dict[str, TYPE] = {
         "unpack": lambda decoder: decoder.decode_32bit_float(),
         "size": 2,
     },
+    "STR4": {
+        "pack": lambda builder, value: builder.add_string(str(value)),
+        "unpack": lambda decoder: decoder.decode_string(4).decode("cp1251"),
+        "size": 2,
+    },
     "STR6": {
         "pack": lambda builder, value: builder.add_string(str(value)),
         "unpack": lambda decoder: decoder.decode_string(6).decode("cp1251"),
